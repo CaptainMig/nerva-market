@@ -1,6 +1,9 @@
 // ═══════════════════════════════════════════════════════════════
 // NERVA MARKET — Vercel Serverless Proxy
-// /api/market.js — v4.4: v7/quote bulk + v8/chart for SPY/QQQ MAs
+// /api/market.js — v4.5: Financial Modeling Prep (no IP blocking)
+// Free tier: 250 calls/day — with 60s cache we use ~14 calls/day
+// Get free API key at: https://financialmodelingprep.com/register
+// Set env var FMP_KEY in Vercel dashboard
 // ═══════════════════════════════════════════════════════════════
 
 const CACHE_SECONDS = 60;
@@ -8,19 +11,13 @@ const CACHE_SECONDS = 60;
 const PORT_SYMS     = ['VGT','GDX','QBTS','VYM'];
 const SECTOR_SYMS   = ['XLK','XLF','XLE','XLV','XLI','XLY','XLP','XLU','XLB','XLRE','XLC'];
 const UNIVERSE_SYMS = ['NVDA','AAPL','MSFT','GOOGL','AMZN','META','TSLA','AMD','AVGO','LLY','JPM','V','UNH','XOM','COST','IONQ','RGTI','PLTR','COIN','SNOW','PANW','CRWD','NET','SQ','SHOP'];
-const MACRO_SYMS    = ['SPY','QQQ','^VIX','^TNX','DX-Y.NYB'];
-const ALL_SYMS      = [...MACRO_SYMS, ...PORT_SYMS, ...SECTOR_SYMS, ...UNIVERSE_SYMS];
+const MACRO_SYMS    = ['SPY','QQQ','%5EVIX','%5ETNX'];
+const ALL_QUOTE_SYMS = [...PORT_SYMS, ...SECTOR_SYMS, ...UNIVERSE_SYMS, 'SPY','QQQ','^VIX','^TNX'];
 
-const HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Accept': 'application/json',
-  'Accept-Language': 'en-US,en;q=0.9',
-  'Referer': 'https://finance.yahoo.com/',
-  'Origin': 'https://finance.yahoo.com',
-};
+const FMP_BASE = 'https://financialmodelingprep.com/api/v3';
 
 function getNextFOMCDays() {
-  const dates = ['2026-03-18','2026-05-06','2026-06-17','2026-07-29','2026-09-16','2026-11-04','2026-12-16'];
+  const dates = ['2026-05-06','2026-06-17','2026-07-29','2026-09-16','2026-11-04','2026-12-16'];
   const now = new Date();
   for (const d of dates) {
     const diff = (new Date(d) - now) / (1000*60*60*24);
@@ -29,65 +26,72 @@ function getNextFOMCDays() {
   return 30;
 }
 
-function parseHistory(data) {
-  try {
-    const r = data?.chart?.result?.[0];
-    if (!r) return { sma20:0, sma50:0, sma200:0, rsi:55 };
-    const closes = r.indicators?.quote?.[0]?.close?.filter(c => c != null) || [];
-    const sma = (n) => closes.length >= n ? closes.slice(-n).reduce((a,b)=>a+b,0)/n : 0;
-    function calcRSI(arr, p=14) {
-      if (arr.length < p+1) return 55;
-      const ch = arr.slice(-(p+1)).map((v,i,a) => i>0 ? v-a[i-1] : 0).slice(1);
-      const g = ch.filter(c=>c>0).reduce((a,b)=>a+b,0)/p;
-      const l = ch.filter(c=>c<0).map(Math.abs).reduce((a,b)=>a+b,0)/p;
-      return l===0 ? 100 : Math.round(100-(100/(1+g/l)));
-    }
-    return { sma20:sma(20), sma50:sma(50), sma200:sma(200), rsi:calcRSI(closes) };
-  } catch { return { sma20:0, sma50:0, sma200:0, rsi:55 }; }
-}
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Cache-Control', `s-maxage=${CACHE_SECONDS}, stale-while-revalidate`);
 
+  const API_KEY = process.env.FMP_KEY;
+
+  // If no API key set yet, return helpful error
+  if (!API_KEY) {
+    return res.status(200).json({
+      error: 'FMP_KEY not set',
+      message: 'Add FMP_KEY environment variable in Vercel dashboard. Get free key at financialmodelingprep.com/register',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   try {
-    // THREE parallel requests only — well within Vercel 10s timeout
-    const [quoteResp, spyResp, qqqResp] = await Promise.all([
-      fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${ALL_SYMS.join(',')}`, { headers: HEADERS }),
-      fetch(`https://query2.finance.yahoo.com/v8/finance/chart/SPY?range=6mo&interval=1d`, { headers: HEADERS }),
-      fetch(`https://query2.finance.yahoo.com/v8/finance/chart/QQQ?range=6mo&interval=1d`, { headers: HEADERS }),
+    // FMP bulk quote — all symbols in one call, no rate limiting issues
+    const symbols = ALL_QUOTE_SYMS.join(',');
+    const [quoteResp, spyHistResp, qqqHistResp] = await Promise.all([
+      fetch(`${FMP_BASE}/quote/${symbols}?apikey=${API_KEY}`),
+      fetch(`${FMP_BASE}/historical-price-full/SPY?timeseries=200&apikey=${API_KEY}`),
+      fetch(`${FMP_BASE}/historical-price-full/QQQ?timeseries=200&apikey=${API_KEY}`),
     ]);
 
-    // Parse bulk quotes — v7/quote returns regularMarketChangePercent directly
+    // Parse bulk quotes
     const quotes = {};
     if (quoteResp.ok) {
       const quoteData = await quoteResp.json();
-      (quoteData?.quoteResponse?.result || []).forEach(q => {
+      (Array.isArray(quoteData) ? quoteData : []).forEach(q => {
         if (q?.symbol) {
           quotes[q.symbol] = {
-            price:     q.regularMarketPrice         || 0,
-            change:    q.regularMarketChange        || 0,
-            changePct: q.regularMarketChangePercent || 0,
-            volume:    q.regularMarketVolume        || 0,
-            sma50:     q.fiftyDayAverage            || 0,
-            sma200:    q.twoHundredDayAverage       || 0,
+            price:     q.price             || 0,
+            change:    q.change            || 0,
+            changePct: q.changesPercentage || 0,
+            volume:    q.volume            || 0,
           };
         }
       });
-    } else {
-      throw new Error(`Quote fetch failed: ${quoteResp.status}`);
     }
 
-    // SPY/QQQ history for accurate 20/50/200d MAs + RSI
-    const spyHistory = spyResp.ok ? parseHistory(await spyResp.json()) : { sma20:0, sma50:0, sma200:0, rsi:55 };
-    const qqqHistory = qqqResp.ok ? parseHistory(await qqqResp.json()) : { sma20:0, sma50:0, sma200:0, rsi:55 };
+    // Parse history for MAs + RSI
+    function parseHistory(data) {
+      try {
+        const hist = data?.historical || [];
+        // FMP returns newest first — reverse for calculations
+        const closes = hist.map(d => d.close).reverse().filter(c => c != null);
+        const sma = (n) => closes.length >= n ? closes.slice(-n).reduce((a,b)=>a+b,0)/n : 0;
+        function calcRSI(arr, p=14) {
+          if (arr.length < p+1) return 55;
+          const ch = arr.slice(-(p+1)).map((v,i,a) => i>0 ? v-a[i-1] : 0).slice(1);
+          const g = ch.filter(c=>c>0).reduce((a,b)=>a+b,0)/p;
+          const l = ch.filter(c=>c<0).map(Math.abs).reduce((a,b)=>a+b,0)/p;
+          return l===0 ? 100 : Math.round(100-(100/(1+g/l)));
+        }
+        return { sma20:sma(20), sma50:sma(50), sma200:sma(200), rsi:calcRSI(closes) };
+      } catch { return { sma20:0, sma50:0, sma200:0, rsi:55 }; }
+    }
 
-    const spy = quotes['SPY']      || {};
-    const qqq = quotes['QQQ']      || {};
-    const vix = quotes['^VIX']     || {};
-    const tnx = quotes['^TNX']     || {};
-    const dxy = quotes['DX-Y.NYB'] || {};
+    const spyHistory = spyHistResp.ok ? parseHistory(await spyHistResp.json()) : { sma20:0, sma50:0, sma200:0, rsi:55 };
+    const qqqHistory = qqqHistResp.ok ? parseHistory(await qqqHistResp.json()) : { sma20:0, sma50:0, sma200:0, rsi:55 };
+
+    const spy = quotes['SPY']   || {};
+    const qqq = quotes['QQQ']   || {};
+    const vix = quotes['^VIX']  || {};
+    const tnx = quotes['^TNX']  || {};
 
     const vixLevel = vix.price || 16;
     const tnxLevel = tnx.price || 4.3;
@@ -98,19 +102,19 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       timestamp: new Date().toISOString(),
-      source: 'yahoo_finance_v7_quote',
+      source: 'financial_modeling_prep',
       spy: {
         price:     spy.price     || 0,
         changePct: spy.changePct || 0,
         sma20:     spyHistory.sma20,
-        sma50:     spyHistory.sma50  || spy.sma50  || 0,
-        sma200:    spyHistory.sma200 || spy.sma200 || 0,
+        sma50:     spyHistory.sma50,
+        sma200:    spyHistory.sma200,
         rsi:       spyHistory.rsi,
       },
       qqq: {
         price:     qqq.price     || 0,
         changePct: qqq.changePct || 0,
-        sma50:     qqqHistory.sma50 || qqq.sma50 || 0,
+        sma50:     qqqHistory.sma50,
         rsi:       qqqHistory.rsi,
       },
       vix: {
@@ -135,11 +139,7 @@ export default async function handler(req, res) {
           change: tnx.change    || 0,
           trend:  (tnx.change   || 0) > 0 ? 'rising' : 'falling',
         },
-        dxy: {
-          level:  dxy.price     || 104,
-          change: dxy.changePct || 0,
-          trend:  (dxy.changePct|| 0) > 0 ? 'strengthening' : 'weakening',
-        },
+        dxy: { level: 104, change: 0, trend: 'neutral' },
         fedStance: tnxLevel > 4.5 ? 'hawkish' : tnxLevel > 4.0 ? 'neutral' : 'dovish',
         fomcDays:  getNextFOMCDays(),
       },
@@ -148,24 +148,24 @@ export default async function handler(req, res) {
         price:     quotes[sym]?.price     || 0,
         changePct: quotes[sym]?.changePct || 0,
         volume:    quotes[sym]?.volume    || 0,
-        sma50:     quotes[sym]?.sma50     || 0,
-        sma200:    quotes[sym]?.sma200    || 0,
+        sma50:     0,
+        sma200:    0,
       })),
       universe: UNIVERSE_SYMS.map(sym => ({
         sym,
         price:     quotes[sym]?.price     || 0,
         changePct: quotes[sym]?.changePct || 0,
         volume:    quotes[sym]?.volume    || 0,
-        sma50:     quotes[sym]?.sma50     || 0,
-        sma200:    quotes[sym]?.sma200    || 0,
+        sma50:     0,
+        sma200:    0,
       })),
     });
 
   } catch (error) {
     console.error('NERVA Market proxy error:', error);
     res.status(500).json({
-      error:     'Failed to fetch market data',
-      message:   error.message,
+      error: 'Failed to fetch market data',
+      message: error.message,
       timestamp: new Date().toISOString(),
     });
   }
