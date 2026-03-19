@@ -1,60 +1,53 @@
 // ═══════════════════════════════════════════════════════════════
 // NERVA MARKET — Vercel Serverless Proxy
-// /api/market.js — v5.0: Standard Free-Tier Recovery
+// /api/market.js — v5.1: Finnhub "Smart Loop" Version
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_SECONDS = 60;
-const FMP_KEY = process.env.FMP_KEY;
-// Switching back to the standard v3 base URL for free tier
-const FMP_BASE = 'https://financialmodelingprep.com/api/v3';
+const FINNHUB_KEY = process.env.FINNHUB_KEY;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const SECTOR_SYMS = ['XLK','XLF','XLE','XLV','XLI','XLY','XLP','XLU','XLB','XLRE','XLC'];
 const PORT_SYMS = ['VGT', 'GDX', 'QBTS', 'VYM'];
-const UNIVERSE_SYMS = ['NVDA','AAPL','MSFT','GOOGL','AMZN','META','TSLA','AMD','AVGO','LLY','JPM','V','UNH','XOM','COST','IONQ','RGTI','PLTR','COIN','SNOW','PANW','CRWD','NET','SQ','SHOP'];
-// Trimming the list slightly to ensure we don't hit "URL too long" limits on free tier
-const ALL_SYMS = ['SPY', 'QQQ', ...SECTOR_SYMS, ...PORT_SYMS, ...UNIVERSE_SYMS];
+const ALL_SYMS = ['SPY', 'QQQ', '^VIX', ...SECTOR_SYMS, ...PORT_SYMS];
 
 export default async function handler(req, res) {
-  if (!FMP_KEY) return res.status(500).json({ error: "FMP_KEY missing in Vercel" });
+  if (!FINNHUB_KEY) return res.status(500).json({ error: "FINNHUB_KEY missing in Vercel" });
 
   try {
-    // Standard v3 bulk quote format: /quote/TICKER1,TICKER2?apikey=...
-    const url = `${FMP_BASE}/quote/${ALL_SYMS.join(',')}?apikey=${FMP_KEY}`;
+    const results = {};
     
-    const resp = await fetch(url);
-    const data = await resp.json();
-
-    // If FMP returns an error object instead of an array
-    if (!Array.isArray(data)) {
-      return res.status(400).json({ 
-        error: "FMP API Error", 
-        message: data["Error Message"] || "Invalid response format" 
-      });
+    // Smart Loop: Fetches symbols individually to avoid "Bulk Paywalls"
+    for (const sym of ALL_SYMS) {
+      const url = `https://finnhub.io/api/v1/quote?symbol=${sym}&token=${FINNHUB_KEY}`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+      
+      // Finnhub maps: c = current price, dp = change percentage
+      results[sym] = {
+        price: data.c || 0,
+        changePct: data.dp || 0
+      };
+      
+      await sleep(50); // 50ms delay keeps us safe from rate limits
     }
 
-    const qMap = Object.fromEntries(data.map(q => [q.symbol, q]));
     const sectors = {};
-    SECTOR_SYMS.forEach(s => { 
-        sectors[s] = qMap[s]?.changesPercentage || 0; 
-    });
+    SECTOR_SYMS.forEach(s => { sectors[s] = results[s].changePct; });
 
     const output = {
       timestamp: new Date().toISOString(),
-      source: "fmp_free_v5.0",
-      symbols_fetched: data.length,
-      spy: { 
-        price: qMap['SPY']?.price || 0, 
-        changePct: qMap['SPY']?.changesPercentage || 0 
-      },
+      source: "finnhub_v5.1_stable",
+      spy: results['SPY'],
+      vix: { level: results['^VIX']?.price || 16 },
       sectors,
       portfolio: PORT_SYMS.map(s => ({
         sym: s,
-        price: qMap[s]?.price || 0,
-        changePct: qMap[s]?.changesPercentage || 0
+        price: results[s].price,
+        changePct: results[s].changePct
       }))
     };
 
-    res.setHeader('Cache-Control', `s-maxage=${CACHE_SECONDS}, stale-while-revalidate`);
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
     return res.status(200).json(output);
 
   } catch (err) {
