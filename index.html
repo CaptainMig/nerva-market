@@ -208,8 +208,9 @@ function appHTML(){
     TOXIC:`TOXIC — max entropy, zero coherence. ${regime}. Full capital preservation. Do not trade.`,
   }[mktR.decision]||'';
 
-  const sectorRows=mkt.sorted.map(([sym,val])=>{
-    const pos=val>0,max=Math.max(...mkt.sorted.map(([,v])=>Math.abs(v)),.1);
+  const sorted=mkt.sorted||[];
+  const sectorRows=sorted.map(([sym,val])=>{
+    const pos=val>0,max=Math.max(...sorted.map(([,v])=>Math.abs(v)),.1);
     const pct=Math.abs(val)/max*100,c=pos?C.grn:C.red;
     return`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
 <span style="width:26px;font-size:7px;color:${C.mid}">${sym}</span>
@@ -450,7 +451,7 @@ function startTicker(){
     {sym:'10Y',p:mkt.macro.tny.y,ch:0,pct:true},
     {sym:'DXY',p:mkt.macro.dxy.l,ch:0,raw:true},
     ...port.map(s=>({sym:s.sym,p:s.price,ch:s.chgPct,nc:s.nerva.color,nd:s.nerva.decision.slice(0,3)})),
-    ...mkt.sorted.slice(0,5).map(([s,v])=>({sym:s,ch:v,p:null})),
+    ...(mkt.sorted||[]).slice(0,5).map(([s,v])=>({sym:s,ch:v,p:null})),
   ];
   const triple=[...items,...items,...items];
   const el=document.getElementById('ticker-inner');
@@ -482,6 +483,7 @@ window.showGuide=function(){const g=document.getElementById('guide');if(g){g.sty
 window.hideGuide=function(){const g=document.getElementById('guide');if(g){g.style.display='none';}}
 
 window.doRefresh=async function(){
+  try{
   const live=await fetchLiveData();
   let d;
   if(live){d=live;S.isLive=true;}
@@ -501,6 +503,24 @@ window.doRefresh=async function(){
   const ex=Math.round((d.exec.br*.3+d.exec.rt*.25+d.exec.pb*.25+d.exec.ft*.2)*100);
   S={...S,mkt:d,mktR:res,port:pd,uni:ud,cats:{v:vs,t:ts,b:bs,m:ms,mc},execS:ex,secAgo:0,tick:S.tick+1};
   renderAll();
+  }catch(err){
+    console.error('NERVA refresh error:',err);
+    S.isLive=false;
+    const d2=genMarket(S.tick);
+    const rawP2=mktParams(d2);
+    const res2=NERVA.classify(rawP2);
+    const pd2=PDEFS.map((s,i)=>genStock(s,i,S.tick));
+    const ud2=UDEFS.map((s,i)=>genStock(s,i+100,S.tick)).sort((a,b)=>(b.nerva.coherence*.4+b.nerva.commitProb*.35+(1-b.nerva.entropy)*.25)-(a.nerva.coherence*.4+a.nerva.commitProb*.35+(1-a.nerva.entropy)*.25));
+    const vl2=d2.vix.level;
+    const vs2=Math.min(100,Math.max(0,Math.round((1-Math.min(1,(vl2-10)/25))*70+(d2.vix.trend5d<0?20:0)+(d2.putCall.ratio<1?10:0))));
+    const ts2b=Math.min(100,Math.max(0,Math.round(rawP2.S*100)));
+    const bs2=Math.min(100,Math.max(0,Math.round((d2.breadth.a20+d2.breadth.a50+d2.breadth.a200)/3)));
+    const ms2=Math.min(100,Math.max(0,Math.round((Object.values(d2.sectors).filter(v=>v>0).length/11)*60+Math.min(40,d2.spread*20))));
+    const mc2=Math.min(100,Math.max(0,Math.round(25+(d2.macro.tny.y<4.5?20:10)+(d2.macro.fomc>7?20:5))));
+    const ex2=Math.round((d2.exec.br*.3+d2.exec.rt*.25+d2.exec.pb*.25+d2.exec.ft*.2)*100);
+    S={...S,mkt:d2,mktR:res2,port:pd2,uni:ud2,cats:{v:vs2,t:ts2b,b:bs2,m:ms2,mc:mc2},execS:ex2,secAgo:0,tick:S.tick+1};
+    renderAll();
+  }
 }
 
 // ── CLOCK ──
