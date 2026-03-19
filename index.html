@@ -273,12 +273,24 @@ ${[['S(ρ)',mktR.entropy,mktR.entropy>.6?C.red:mktR.entropy<.3?C.grn:C.yel],['|�
   const stockRows=stocks.map(s=>{
     const sc=s.nerva.color;
     const isExp=exp===s.sym;
-    const detailHTML=isExp?`<div style="padding:9px 11px;background:${C.panel};border-top:1px solid ${C.border}20;animation:fadeIn 0.2s ease">
-<div style="padding:6px 9px;border-radius:3px;margin-bottom:8px;background:${s.nerva.filtered?'#ffcc4408':sc+'08'};border:1px solid ${s.nerva.filtered?'#ffcc4430':sc+'20'};font-size:8px;color:${C.txt};line-height:1.8">
-${s.nerva.filtered
-  ? `<span style="color:#ffcc44;font-weight:bold">⚠ NOISE FILTER ACTIVE</span> — Signal downgraded from COMMIT to HOLD.<br>Reason: <span style="color:#ffcc44">${s.nerva.filterReasons?.join(' · ')||'volatility flag'}</span><br>NERVA suppressed this signal to protect against false positives. Do not act on COMMIT — review conditions manually.`
-  : ${{COMMIT:s.bias==='LONG'?`State → |COMMIT⟩. Coherence ${Math.round(s.nerva.coherence*100)}%. Price above 50d. Signal integrity high — supports entry or adding.`:`State → |COMMIT⟩. Coherence ${Math.round(s.nerva.coherence*100)}%. Price below 50d. Signal clean but trend negative — defensive only.`,HOLD:`Mixed coherence ${Math.round(s.nerva.coherence*100)}%. Entropy ${Math.round(s.nerva.entropy*100)}%. Hold existing — do not add. Watch for coherence recovery above 40%.`,WAIT:`High entropy (${Math.round(s.nerva.entropy*100)}%). State decoherent. No reliable signal. Preserve capital.`,ESCALATE:`Inverse alignment. State → |AVOID⟩. Coherence ${Math.round(s.nerva.coherence*100)}%. Consider hedging.`,TOXIC:`TOXIC — max entropy, min coherence. Stand aside.`}[s.nerva.decision]||''}
-}
+    // Pre-compute interpretation text to avoid nested template literal issues
+  const decisionText = s.nerva.filtered
+    ? '<span style="color:#ffcc44;font-weight:bold">⚠ NOISE FILTER ACTIVE</span> — Signal downgraded from COMMIT to HOLD.<br>Reason: <span style="color:#ffcc44">'+(s.nerva.filterReasons?.join(' · ')||'volatility flag')+'</span><br>NERVA suppressed this signal. Do not act — review conditions manually.'
+    : ({
+        COMMIT: s.bias==='LONG'
+          ? 'State → |COMMIT⟩. Coherence '+Math.round(s.nerva.coherence*100)+'%. Price above 50d. Signal integrity high — supports entry or adding.'
+          : 'State → |COMMIT⟩. Coherence '+Math.round(s.nerva.coherence*100)+'%. Price below 50d. Signal clean but trend negative — defensive only.',
+        HOLD:     'Mixed coherence '+Math.round(s.nerva.coherence*100)+'%. Entropy '+Math.round(s.nerva.entropy*100)+'%. Hold existing — do not add. Watch for coherence recovery above 40%.',
+        WAIT:     'High entropy ('+Math.round(s.nerva.entropy*100)+'%). State decoherent. No reliable signal. Preserve capital.',
+        ESCALATE: 'Inverse alignment. State → |AVOID⟩. Coherence '+Math.round(s.nerva.coherence*100)+'%. Consider hedging.',
+        TOXIC:    'TOXIC — max entropy, min coherence. Stand aside.',
+      }[s.nerva.decision]||'');
+  const detailBg  = s.nerva.filtered ? '#ffcc4408' : sc+'08';
+  const detailBdr = s.nerva.filtered ? '#ffcc4430' : sc+'20';
+
+  const detailHTML=isExp?`<div style="padding:9px 11px;background:${C.panel};border-top:1px solid ${C.border}20;animation:fadeIn 0.2s ease">
+<div style="padding:6px 9px;border-radius:3px;margin-bottom:8px;background:${detailBg};border:1px solid ${detailBdr};font-size:8px;color:${C.txt};line-height:1.8">
+${decisionText}
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
 <div>
