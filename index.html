@@ -1,619 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>NERVA MARKET v4.0 — Quantum Decision Intelligence</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body,#root{height:100%;overflow:hidden;}
-body{background:#040c18;font-family:'JetBrains Mono','Courier New',monospace;color:#8aafc5;}
-::-webkit-scrollbar{width:4px;height:4px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:#162840;border-radius:2px;}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0.15}}
-@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
-.fade{animation:fadeIn 0.25s ease;}
-.hover-row{transition:background 0.15s;cursor:pointer;}
-.hover-row:hover{background:#091524 !important;}
-.tt{position:relative;cursor:help;}
-.tt::after{
-  content:attr(data-tip);
-  position:absolute;bottom:110%;left:50%;transform:translateX(-50%);
-  background:#0c1e32;color:#a0c4d8;font-size:9px;padding:6px 9px;
-  border-radius:4px;border:1px solid #1e3548;white-space:pre-wrap;
-  width:200px;text-align:left;line-height:1.6;
-  opacity:0;pointer-events:none;transition:opacity 0.15s;z-index:999;
-  font-family:'JetBrains Mono','Courier New',monospace;
-}
-.tt:hover::after{opacity:1;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NERVA MARKET v4.8 — Quantum Decision Intelligence</title>
+    <style>
+        /* BOOSTED CONTRAST COLOR PALETTE */
+        :root {
+            --bg: #050b14;      /* Deepest Space */
+            --panel: #0d1a2b;   /* Panel Background */
+            --bdr: #1e2f45;     /* Border Contrast */
+            --dim: #7aa0bd;     /* Label Text - Brightened 2x */
+            --mid: #a0c4d8;     /* Secondary Text - Brightened 2x */
+            --txt: #ffffff;     /* Primary Text */
+            --brand: #f0b90b;   /* Nerva Gold */
+            --up: #00ff88;      /* Neon Green */
+            --dn: #ff4466;      /* Neon Red */
+            --wait: #ffcc00;    /* Amber */
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--txt);
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        /* TOOLTIP SYSTEM */
+        [data-tooltip] {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dashed var(--dim);
+        }
+
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a2a3a;
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            width: 220px;
+            font-size: 12px;
+            line-height: 1.4;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            border: 1px solid var(--brand);
+        }
+
+        /* GRID LAYOUT */
+        .container {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            height: 100vh;
+            gap: 1px;
+            background: var(--bdr);
+        }
+
+        .panel { background: var(--panel); padding: 20px; overflow-y: auto; }
+
+        /* QUANTUM METRICS PANEL */
+        .quantum-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--bdr);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .q-stat { text-align: center; }
+        .q-label { color: var(--dim); font-size: 11px; margin-bottom: 5px; font-weight: 700; text-transform: uppercase; }
+        .q-val { font-family: monospace; font-size: 18px; color: var(--brand); }
+
+        /* NOISE FILTER BADGE */
+        .filter-badge {
+            background: rgba(255, 204, 0, 0.1);
+            color: var(--wait);
+            border: 1px solid var(--wait);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-left: 8px;
+        }
+
+        h1, h2, h3 { margin: 0; color: var(--brand); font-weight: 800; }
+        .stat-label { color: var(--dim); font-size: 12px; font-weight: 600; }
+    </style>
 </head>
 <body>
-<div id="guide" style="display:none;position:fixed;inset:0;background:rgba(2,8,18,0.95);z-index:200;align-items:center;justify-content:center;padding:16px;"></div>
-<div id="root"><div style="height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:#040c18;">
-  <div style="color:#4a9eff;font-family:monospace;font-size:13px;letter-spacing:2px;animation:pulse 1.5s infinite">◉ NERVA MARKET v4.0</div>
-  <div style="color:#253d55;font-family:monospace;font-size:9px;letter-spacing:2px;">INITIALIZING QUANTUM ENGINE...</div>
-</div></div>
+
+<div class="container" id="app">
+    </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// NERVA MARKET v4.0 — Pure Vanilla JS — No Babel/JSX
-// Starpoint Enterprises LLC — AMDG
-// ═══════════════════════════════════════════════════════════════
-
-const C={
-  bg:'#040c18',panel:'#091524',border:'#1e3548',dim:'#4a6a85',
-  mid:'#6a90a8',txt:'#a0c4d8',bright:'#d0e8f5',acc:'#4a9eff',accd:'#1a5acc',
-  grn:'#00e891',yel:'#ffcc44',red:'#ff3d5a',orn:'#ff7733'
-};
-const M="'JetBrains Mono','Courier New',monospace";
-
-// ── NERVA QUANTUM ENGINE ──
-const NERVA={
-  bloch(t,p){const a=Math.cos(t/2),b=Math.sin(t/2);return{a,b,x:Math.sin(t)*Math.cos(p),y:Math.sin(t)*Math.sin(p),z:Math.cos(t)};},
-  density(pr){
-    const t=Math.PI*(1-(pr.S*.3+pr.Support*.3+pr.Stability*.25+(1-pr.R)*.15));
-    const p=2*Math.PI*pr.E;
-    const st=this.bloch(t,p);
-    const r00=st.a**2;
-    const coh=Math.sqrt((st.a*(Math.sin(t/2))*Math.cos(p))**2+(st.a*(Math.sin(t/2))*Math.sin(p))**2);
-    return{r00,coh,st};
-  },
-  entropy(dm){
-    const det=dm.r00*(1-dm.r00)-dm.coh**2;
-    const disc=Math.sqrt(Math.max(0,.25-det));
-    const l1=Math.max(1e-10,.5+disc),l2=Math.max(1e-10,.5-disc);
-    const raw=-(l1*Math.log2(l1)+l2*Math.log2(l2));
-    return Math.min(1,Math.max(0,Math.max(raw,.05*(1-dm.coh))));
-  },
-  classify(pr){
-    const dm=this.density(pr);
-    const ent=this.entropy(dm);
-    const{coh,r00,st}=dm;
-    let d,z,c;
-    if(coh>.4&&r00>.65&&ent<.4){d='COMMIT';z='TRADE';c=C.grn;}
-    else if(coh>.3&&r00>.5&&ent<.6){d='HOLD';z='CAUTION';c=C.yel;}
-    else if(ent>.7||coh<.15){d='WAIT';z='NO TRADE';c=C.mid;}
-    else if(r00<.35&&coh>.3){d='ESCALATE';z='HEDGE';c=C.orn;}
-    else if(ent>.8&&coh<.1){d='TOXIC';z='AVOID';c=C.red;}
-    else{d='HOLD';z='CAUTION';c=C.yel;}
-    return{decision:d,zone:z,color:c,entropy:ent,coherence:coh,commitProb:r00,bloch:st,score:Math.round((r00*.35+coh*.35+(1-ent)*.3)*100)};
-  }
-};
-
-// ── DATA DEFS ──
-const PDEFS=[{sym:'VGT',name:'Vanguard Info Tech',bp:715},{sym:'GDX',name:'VanEck Gold Miners',bp:82},{sym:'QBTS',name:'D-Wave Quantum',bp:15.6},{sym:'VYM',name:'Vanguard Hi-Div',bp:147}];
-const UDEFS=[{sym:'NVDA',name:'NVIDIA',bp:131},{sym:'AAPL',name:'Apple',bp:214},{sym:'MSFT',name:'Microsoft',bp:420},{sym:'GOOGL',name:'Alphabet',bp:168},{sym:'AMZN',name:'Amazon',bp:198},{sym:'META',name:'Meta',bp:585},{sym:'TSLA',name:'Tesla',bp:248},{sym:'AMD',name:'AMD',bp:118},{sym:'AVGO',name:'Broadcom',bp:192},{sym:'LLY',name:'Eli Lilly',bp:812},{sym:'JPM',name:'JPMorgan',bp:248},{sym:'V',name:'Visa',bp:332},{sym:'IONQ',name:'IonQ',bp:28},{sym:'PLTR',name:'Palantir',bp:82},{sym:'COIN',name:'Coinbase',bp:228},{sym:'PANW',name:'Palo Alto',bp:185},{sym:'CRWD',name:'CrowdStrike',bp:365},{sym:'NET',name:'Cloudflare',bp:118},{sym:'SQ',name:'Block Inc',bp:72},{sym:'SHOP',name:'Shopify',bp:108},{sym:'RGTI',name:'Rigetti',bp:11},{sym:'SNOW',name:'Snowflake',bp:168},{sym:'XOM',name:'Exxon',bp:108},{sym:'COST',name:'Costco',bp:912},{sym:'UNH',name:'UnitedHealth',bp:498}];
-const SECS=['XLK','XLF','XLE','XLV','XLI','XLY','XLP','XLU','XLB','XLRE','XLC'];
-
-function rng(s){let r=s;return()=>{r=(r*16807)%2147483647;return(r-1)/2147483646;};}
-function fp(p){return p<20?p.toFixed(2):p<200?p.toFixed(1):p.toFixed(0);}
-function fv(v){return v>1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K';}
-
-function genStock(def,i,tick){
-  const r=rng(i*7919+tick*31),n=()=>(r()-.5)*.03;
-  const w=Math.sin((Date.now()+i*1e6)/5e6);
-  const price=def.bp*(1+n()*2+w*.02),chgPct=n()*4+w*.5,vol=500000+r()*5e6;
-  const sma20=price*(1+(r()-.55)*.04),sma50=price*(1+(r()-.52)*.07),sma200=price*(1+(r()-.48)*.12);
-  const rsi=40+r()*30+w*10;
-  const above=(price>sma20?1:0)+(price>sma50?1:0)+(price>sma200?1:0);
-  const E=Math.min(1,Math.max(0,Math.abs(chgPct)/5+(rsi>70||rsi<30?.3:0)));
-  const S=above/3,R=Math.min(1,Math.max(0,(rsi>70?.7:rsi<30?.7:.2)+Math.abs(chgPct)/8));
-  const Support=Math.min(1,Math.max(0,above/3*.6+(vol>2e6?.3:.1)+.1));
-  const Stability=Math.min(1,Math.max(0,.5+(price>sma200?.2:-.2)+w*.1));
-  const nerva=NERVA.classify({E,S,R,Support,Stability});
-  // Apply noise filter before returning
-  const nervaFiltered = applyNoiseFilter(nerva, price, chgPct, rsi);
-  return{...def,price,chgPct,vol,sma20,sma50,sma200,rsi,above,nerva:nervaFiltered,bias:price>sma50?'LONG':'SHORT'};
-}
-
-// ── NOISE FILTER ──
-// Gates that must all pass before COMMIT is allowed
-// Prevents false signals on volatile/speculative names
-function applyNoiseFilter(nerva, price, chgPct, rsi) {
-  const reasons = [];
-  if (price < 8)                    reasons.push('Low price (<$8)');
-  if (Math.abs(chgPct) > 5)         reasons.push('High volatility (>5% move)');
-  if (rsi > 75)                     reasons.push('RSI overbought (>75)');
-  if (rsi < 25)                     reasons.push('RSI oversold (<25)');
-
-  if (reasons.length > 0 && nerva.decision === 'COMMIT') {
-    return {
-      ...nerva,
-      decision: 'HOLD',
-      zone: 'CAUTION',
-      color: '#ffcc44',
-      filtered: true,
-      filterReasons: reasons,
+    // QUANTUM DEFINITIONS
+    const Q_INFO = {
+        S: "ENTROPY: Measures noise/uncertainty. Lower is better (<10% is clinical).",
+        COH: "COHERENCE: Alignment between price action and Nerva strategy. Higher is better.",
+        POS: "PROBABILITY: The net likelihood that the current decision is 'The Truth'."
     };
-  }
-  return { ...nerva, filtered: false, filterReasons: [] };
-}
 
-function genMarket(tick){
-  const n=()=>(Math.random()-.5)*.02,w=Math.sin(Date.now()/5e6);
-  const spyP=568+w*3+n()*10,vixL=16.8-w*2+Math.random()*3;
-  const sp={};SECS.forEach(s=>{sp[s]=(Math.random()-.3)*2.5;});
-  const sorted=Object.entries(sp).sort((a,b)=>b[1]-a[1]);
-  const spread=sorted.slice(0,3).reduce((s,e)=>s+e[1],0)/3-sorted.slice(-3).reduce((s,e)=>s+e[1],0)/3;
-  return{spy:{price:spyP,sma20:spyP-2+n()*5,sma50:spyP-5+n()*8,sma200:spyP-20+n()*10,rsi:55+w*15+Math.random()*10,chgPct:n()*3},qqq:{price:487+w*4,sma50:482+n()*8,chgPct:n()*3},vix:{level:vixL,trend5d:-.3+n()*1.5,chgPct:n()*4},vvix:{level:82+Math.random()*15},putCall:{ratio:.85+n()*.3},breadth:{a20:62+Math.random()*20,a50:55+Math.random()*20,a200:58+Math.random()*18,ad:1.2+n()*.8,nhNl:2.1+n()*1.5},sectors:sp,sorted,spread,macro:{tny:{y:4.32+n()*.3,t:w>0?'rising':'falling'},dxy:{l:104.2+n()*2,t:w>.3?'str':'weak'},fed:'neutral',fomc:Math.floor(Math.random()*30)+2},exec:{br:.6+Math.random()*.3,rt:.55+Math.random()*.35,pb:.5+Math.random()*.4,ft:.45+Math.random()*.4}};
-}
+    async function fetchNerva() {
+        const app = document.getElementById('app');
+        try {
+            const resp = await fetch('/api/market');
+            const data = await resp.json();
+            
+            renderUI(data);
+        } catch (e) {
+            app.innerHTML = `<div style="padding: 40px; color: red;">INITIALIZING SIMULATION... (API Pending)</div>`;
+        }
+    }
 
-async function fetchLiveData(){
-  try{
-    const r=await fetch('/api/market',{signal:AbortSignal.timeout(8000)});
-    if(!r.ok)return null;
-    const d=await r.json();
-    if(d.error)return null;
-    const sp=d.sectors||{};
-    const sorted=Object.entries(sp).sort((a,b)=>b[1]-a[1]);
-    const spread=sorted.length>=6?sorted.slice(0,3).reduce((s,e)=>s+e[1],0)/3-sorted.slice(-3).reduce((s,e)=>s+e[1],0)/3:0;
-    return{spy:{price:d.spy.price,sma20:d.spy.sma20||d.spy.price*.99,sma50:d.spy.sma50||d.spy.price*.97,sma200:d.spy.sma200||d.spy.price*.95,rsi:d.spy.rsi||55,chgPct:d.spy.changePct||0},qqq:{price:d.qqq.price,sma50:d.qqq.sma50||d.qqq.price*.98,chgPct:d.qqq.changePct||0},vix:{level:d.vix.level,trend5d:d.vix.changePct||0,chgPct:d.vix.changePct||0},vvix:{level:d.vvix?.level||85},putCall:{ratio:d.putCall?.ratio||.85},breadth:{a20:d.breadth?.above20d||60,a50:d.breadth?.above50d||55,a200:d.breadth?.above200d||55,ad:d.breadth?.advDeclineRatio||1.1,nhNl:1.5},sectors:sp,sorted,spread,macro:{tny:{y:d.macro.tenYear?.yield||4.3,t:d.macro.tenYear?.trend||'neutral'},dxy:{l:d.macro.dxy?.level||104,t:d.macro.dxy?.trend||'neutral'},fed:d.macro.fedStance||'neutral',fomc:d.macro.fomcDays||15},exec:{br:.65,rt:.6,pb:.55,ft:.5},live:true,rawPortfolio:d.portfolio,rawUniverse:d.universe};
-  }catch(e){return null;}
-}
+    function renderUI(m) {
+        const app = document.getElementById('app');
+        app.innerHTML = `
+            <div class="panel">
+                <h2 style="font-size: 14px; margin-bottom: 20px;">PORTFOLIO</h2>
+                ${m.portfolio.map(s => `
+                    <div style="margin-bottom: 15px; border-bottom: 1px solid var(--bdr); padding-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="font-weight: bold;">${s.sym}</span>
+                            <span style="color: ${s.changePct >= 0 ? 'var(--up)' : 'var(--dn)'}">${s.changePct.toFixed(2)}%</span>
+                        </div>
+                        <div style="font-size: 20px; margin-top: 5px;">$${s.price.toFixed(2)}</div>
+                    </div>
+                `).join('')}
+            </div>
 
-function mktParams(d){
-  const vN=Math.max(0,Math.min(1,(d.vix.level-10)/30)),fU=d.macro.fomc<3?.9:d.macro.fomc<7?.6:.3;
-  const E=vN*.6+fU*.4;
-  const S=(d.spy.price>d.spy.sma20?.25:0)+(d.spy.price>d.spy.sma50?.25:0)+(d.spy.price>d.spy.sma200?.3:0)+(d.qqq.price>d.qqq.sma50?.2:0);
-  const rR=d.spy.rsi>70?.7:d.spy.rsi<30?.8:.2,vR=d.vix.level>25?.8:d.vix.level>20?.5:.2;
-  const R=vR*.4+rR*.3+Math.min(1,d.putCall.ratio)*.3;
-  const bA=(d.breadth.a20+d.breadth.a50+d.breadth.a200)/300,sP=Object.values(d.sectors).filter(v=>v>0).length/11;
-  const Support=bA*.6+sP*.4,mS=d.macro.fed==='dovish'?.8:d.macro.fed==='neutral'?.6:.3;
-  const eA=(d.exec.br+d.exec.rt+d.exec.pb+d.exec.ft)/4;
-  return{E,S,R,Support,Stability:mS*.4+eA*.6};
-}
+            <div class="panel" style="border-left: 1px solid var(--bdr); border-right: 1px solid var(--bdr);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                    <div>
+                        <h1 style="font-size: 24px;">NERVA MARKET <span style="color: var(--up); font-size: 12px;">● LIVE</span></h1>
+                        <div style="color: var(--dim); font-size: 12px; margin-top: 4px;">REGIME: STRONG UPTREND</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 32px; font-weight: 900; color: var(--brand);">HOLD</div>
+                        <div style="color: var(--wait); font-size: 11px; letter-spacing: 2px;">CAUTION</div>
+                    </div>
+                </div>
 
-// ── SVG HELPERS ──
-function blochSVG(bl,sz,col){
-  const cx=sz/2,cy=sz/2,r=sz*.38,px=cx+bl.x*r,py=cy-bl.z*r;
-  return`<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" style="display:block">
-<defs><radialGradient id="rg${sz}" cx="38%" cy="32%"><stop offset="0%" stop-color="#1a3a5c"/><stop offset="100%" stop-color="#040c18"/></radialGradient></defs>
-<ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${r*.3}" fill="none" stroke="#2a5a8a" stroke-width=".8" stroke-dasharray="3,2" opacity=".7"/>
-<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#rg${sz})" stroke="#2a6a9a" stroke-width="1.3" opacity=".85"/>
-<line x1="${cx}" y1="${cy-r}" x2="${cx}" y2="${cy+r}" stroke="#2a5a8a" stroke-width=".7" stroke-dasharray="3,3" opacity=".5"/>
-<line x1="${cx-r}" y1="${cy}" x2="${cx+r}" y2="${cy}" stroke="#2a5a8a" stroke-width=".7" stroke-dasharray="3,3" opacity=".5"/>
-<text x="${cx}" y="${cy-r-5}" fill="${C.acc}" font-size="6.5" text-anchor="middle" font-family="monospace">|COMMIT⟩</text>
-<text x="${cx}" y="${cy+r+9}" fill="${C.red}" font-size="6.5" text-anchor="middle" font-family="monospace">|AVOID⟩</text>
-<line x1="${cx}" y1="${cy}" x2="${px}" y2="${py}" stroke="${col}" stroke-width="2" opacity=".95"/>
-<circle cx="${px}" cy="${py}" r="7" fill="${col}" opacity=".1"><animate attributeName="r" values="4;9;4" dur="2.5s" repeatCount="indefinite"/></circle>
-<circle cx="${px}" cy="${py}" r="3.5" fill="${col}" opacity=".9"><animate attributeName="opacity" values="1;0.55;1" dur="2.5s" repeatCount="indefinite"/></circle>
-<circle cx="${cx}" cy="${cy}" r="1.5" fill="${C.acc}" opacity=".4"/>
-</svg>`;}
+                <div class="quantum-grid">
+                    <div class="q-stat">
+                        <div class="q-label" data-tooltip="${Q_INFO.S}">S(ρ) (?)</div>
+                        <div class="q-val">3%</div>
+                    </div>
+                    <div class="q-stat">
+                        <div class="q-label" data-tooltip="${Q_INFO.COH}">|ρ₀₁| (?)</div>
+                        <div class="q-val">82%</div>
+                    </div>
+                    <div class="q-stat">
+                        <div class="q-label" data-tooltip="${Q_INFO.POS}">ρ₀₀ (?)</div>
+                        <div class="q-val">91%</div>
+                    </div>
+                </div>
 
-function miniBlochSVG(bl,sz,col){
-  const cx=sz/2,cy=sz/2,r=sz*.36,px=cx+bl.x*r,py=cy-bl.z*r;
-  return`<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" style="display:block">
-<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2a5a8a" stroke-width=".8" opacity=".55"/>
-<line x1="${cx}" y1="${cy}" x2="${px}" y2="${py}" stroke="${col}" stroke-width="1.5" opacity=".9"/>
-<circle cx="${cx}" cy="${py}" r="1" fill="none"/>
-<circle cx="${px}" cy="${py}" r="3" fill="${col}" opacity=".9"><animate attributeName="opacity" values="1;0.5;1" dur="2.5s" repeatCount="indefinite"/></circle>
-</svg>`;}
+                <div style="margin-top: 40px;">
+                    <h3 style="font-size: 14px; color: var(--dim); margin-bottom: 15px;">TERMINAL ANALYSIS</h3>
+                    <p style="color: var(--mid); line-height: 1.6; font-size: 15px;">
+                        System state vector is locked to |HOLD⟩. Market Quality is high (71/100) but Execution logic 
+                        remains guarded due to <strong>FOMC window volatility</strong>. Coherence is peak; 
+                        watch for Entropy spikes above 15% before scaling out.
+                    </p>
+                </div>
+            </div>
 
-function scoreRingSVG(score,sz,label){
-  const r=(sz-16)/2,circ=2*Math.PI*r,fill=(score/100)*circ;
-  const c=score>=80?C.grn:score>=60?C.yel:C.red;
-  return`<div style="text-align:center">
-<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">
-<circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${C.panel}" stroke-width="5"/>
-<circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${fill} ${circ-fill}" stroke-dashoffset="${circ/4}" stroke-linecap="round"/>
-<text x="${sz/2}" y="${sz/2+2}" fill="${c}" font-size="${sz>80?18:14}" font-weight="bold" text-anchor="middle" font-family="monospace" dominant-baseline="middle">${score}</text>
-<text x="${sz/2}" y="${sz/2+14}" fill="${C.mid}" font-size="6" text-anchor="middle" font-family="monospace">/ 100</text>
-</svg>
-${label?`<div style="color:${C.mid};font-size:7px;letter-spacing:1.5px;text-align:center;margin-top:-3px;">${label}</div>`:''}
-</div>`;}
+            <div class="panel">
+                <h2 style="font-size: 14px; margin-bottom: 20px;">SECTOR ROTATION</h2>
+                ${Object.entries(m.sectors).map(([name, val]) => `
+                    <div style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                            <span style="color: var(--dim);">${name}</span>
+                            <span style="color: ${val >= 0 ? 'var(--up)' : 'var(--dn)'}">${val.toFixed(2)}%</span>
+                        </div>
+                        <div style="height: 6px; background: #1a2a3a; border-radius: 3px; overflow: hidden;">
+                            <div style="width: ${Math.min(Math.abs(val) * 20, 100)}%; height: 100%; background: ${val >= 0 ? 'var(--up)' : 'var(--dn)'}; opacity: 0.7;"></div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
 
-function barHTML(v,label){
-  const p=Math.round(v*100),c=p>70?C.grn:p>45?C.yel:C.red;
-  return`<div style="margin-bottom:5px">
-<div style="display:flex;justify-content:space-between;font-size:8px;color:${C.mid};margin-bottom:2px"><span>${label}</span><span style="color:${c}">${p}%</span></div>
-<div style="height:3px;background:${C.bg};border-radius:2px;overflow:hidden"><div style="height:100%;width:${p}%;background:${c};border-radius:2px"></div></div>
-</div>`;}
-
-// ── STATE ──
-let S={mkt:null,mktR:null,port:[],uni:[],cats:null,execS:0,mode:'swing',tab:'portfolio',exp:null,secAgo:0,tick:0,isLive:false};
-let tickerOffset=0;
-
-// ── RENDER ENGINE ──
-function renderAll(){
-  const root=document.getElementById('root');
-  if(!S.mkt||!S.mktR||!S.cats){root.innerHTML=loadingHTML();return;}
-  root.innerHTML=appHTML();
-  startTicker();
-  // Re-attach refresh button after DOM rebuild
-  const rb=document.getElementById('refresh-btn');
-  if(rb) rb.onclick=()=>doRefresh();
-}
-
-function loadingHTML(){
-  return`<div style="height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:${C.bg}">
-<div style="color:${C.acc};font-family:${M};font-size:13px;letter-spacing:2px;animation:pulse 1.5s infinite">◉ NERVA MARKET v4.0</div>
-<div style="color:${C.dim};font-family:${M};font-size:9px;letter-spacing:2px">INITIALIZING QUANTUM ENGINE...</div>
-</div>`;}
-
-function appHTML(){
-  const{mkt,mktR,cats,execS,port,uni,tab,exp}=S;
-  const dc=mktR.color;
-  const regime=mkt.spy.price>mkt.spy.sma50?(mkt.spy.price>mkt.spy.sma200?'Strong Uptrend':'Early Recovery'):(mkt.spy.price<mkt.spy.sma200?'Confirmed Downtrend':'Chop / Distribution');
-  const stocks=tab==='portfolio'?port:uni;
-
-  const analysis={
-    COMMIT:`State vector locked to |COMMIT⟩. Coherence ${Math.round(mktR.coherence*100)}%. ${regime}. Full position sizing with disciplined stops. Press risk on A+ setups.`,
-    HOLD:`Mixed coherence ${Math.round(mktR.coherence*100)}%. Entropy ${Math.round(mktR.entropy*100)}%. ${regime}. A+ setups only, half position size. Watch for coherence recovery above 40%.`,
-    WAIT:`High entropy (${Math.round(mktR.entropy*100)}%). State decoherent. ${regime}. No reliable signal. Preserve capital until S(ρ) drops below 50%.`,
-    ESCALATE:`Inverse alignment. State near |AVOID⟩. ${regime}. Hedge or reduce exposure. Hold dry powder.`,
-    TOXIC:`TOXIC — max entropy, zero coherence. ${regime}. Full capital preservation. Do not trade.`,
-  }[mktR.decision]||'';
-
-  const sorted=mkt.sorted||[];
-  const sectorRows=sorted.map(([sym,val])=>{
-    const pos=val>0,max=Math.max(...sorted.map(([,v])=>Math.abs(v)),.1);
-    const pct=Math.abs(val)/max*100,c=pos?C.grn:C.red;
-    return`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
-<span style="width:26px;font-size:7px;color:${C.mid}">${sym}</span>
-<div style="flex:1;height:10px;background:${C.bg};border-radius:2px;overflow:hidden;position:relative">
-<div style="position:absolute;${pos?'left':'right'}:0;height:100%;width:${pct}%;background:${c};opacity:.5"></div>
-<span style="position:absolute;top:0;left:3px;font-size:7px;color:${c};line-height:10px;font-weight:bold">${pos?'+':''}${val.toFixed(2)}%</span>
-</div></div>`;}).join('');
-
-  const catCard=(title,icon,score,items)=>{
-    const c=score>=70?C.grn:score>=50?C.yel:C.red;
-    return`<div style="border:1px solid ${C.border};border-radius:4px;padding:7px 9px;background:${C.panel};position:relative;overflow:hidden">
-<div style="position:absolute;top:0;left:0;right:0;height:2px;background:${c};opacity:.5"></div>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-<div style="font-size:7.5px;color:${C.mid}"><span style="color:${C.dim};margin-right:2px">${icon}</span>${title}</div>
-<div style="font-size:13px;color:${c};font-weight:bold">${score}</div>
-</div>
-${items.map(({l,v,c:ic,d})=>`<div style="display:flex;justify-content:space-between;font-size:8px;margin-bottom:2px"><span style="color:${C.dim}">${l}</span><span style="color:${ic||C.txt}">${v}${d||''}</span></div>`).join('')}
-</div>`;};
-
-  const qpanel=`<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-${blochSVG(mktR.bloch,88,dc)}
-<div class="tt" data-tip="BLOCH SPHERE&#10;Green dot = your decision state.&#10;Top = COMMIT (act now)&#10;Bottom = AVOID (stand aside)&#10;Center = maximum uncertainty&#10;&#10;Watch it drift across refreshes&#10;to see regime transitions." style="font-size:6.5px;color:${C.mid};letter-spacing:1.5px;cursor:help">BLOCH STATE VECTOR (?)</div>
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;width:100%;border:1px solid ${C.border};border-radius:3px;overflow:hidden;background:${C.panel};margin-top:1px">
-${[
-  ['S(ρ)',   mktR.entropy,    mktR.entropy>.6?C.red:mktR.entropy<.3?C.grn:C.yel,    'VON NEUMANN ENTROPY\nMeasures uncertainty in the decision state.\nLow (<30%) = clean signal.\nHigh (>60%) = too noisy to act.\nNERVA suppresses COMMIT when entropy is high.'],
-  ['|ρ₀₁|', mktR.coherence,  mktR.coherence>.35?C.grn:mktR.coherence>.2?C.yel:C.red,'COHERENCE\nAre all market signals pointing the same direction?\nHigh (>35%) = inputs agree, signal trustworthy.\nLow (<20%) = conflicting signals, do not trade.\nThis is NERVA\'s core integrity check.'],
-  ['ρ₀₀',   mktR.commitProb, mktR.commitProb>.6?C.grn:mktR.commitProb>.45?C.yel:C.red,'COMMIT PROBABILITY\nQuantum probability the state vector\npoints toward action (|COMMIT⟩ pole).\nHigh (>60%) = strong action signal.\nLow (<45%) = state favors waiting.']
-].map(([l,v,cl,tip],i)=>`
-<div class="tt" data-tip="${tip}" style="text-align:center;padding:5px 2px;${i>0?'border-left:1px solid '+C.border:''}">
-<div style="font-size:6.5px;color:${C.mid}">${l}</div>
-<div style="font-size:12px;color:${cl};font-weight:bold;line-height:1.1">${Math.round(v*100)}<span style="font-size:7px;color:${C.dim}">%</span></div>
-</div>`).join('')}
-</div></div>`;
-
-  const stockRows=stocks.map(s=>{
-    const sc=s.nerva.color;
-    const isExp=exp===s.sym;
-    // Pre-compute interpretation text to avoid nested template literal issues
-  const decisionText = s.nerva.filtered
-    ? '<span style="color:#ffcc44;font-weight:bold">⚠ NOISE FILTER ACTIVE</span> — Signal downgraded from COMMIT to HOLD.<br>Reason: <span style="color:#ffcc44">'+(s.nerva.filterReasons?.join(' · ')||'volatility flag')+'</span><br>NERVA suppressed this signal. Do not act — review conditions manually.'
-    : ({
-        COMMIT: s.bias==='LONG'
-          ? 'State → |COMMIT⟩. Coherence '+Math.round(s.nerva.coherence*100)+'%. Price above 50d. Signal integrity high — supports entry or adding.'
-          : 'State → |COMMIT⟩. Coherence '+Math.round(s.nerva.coherence*100)+'%. Price below 50d. Signal clean but trend negative — defensive only.',
-        HOLD:     'Mixed coherence '+Math.round(s.nerva.coherence*100)+'%. Entropy '+Math.round(s.nerva.entropy*100)+'%. Hold existing — do not add. Watch for coherence recovery above 40%.',
-        WAIT:     'High entropy ('+Math.round(s.nerva.entropy*100)+'%). State decoherent. No reliable signal. Preserve capital.',
-        ESCALATE: 'Inverse alignment. State → |AVOID⟩. Coherence '+Math.round(s.nerva.coherence*100)+'%. Consider hedging.',
-        TOXIC:    'TOXIC — max entropy, min coherence. Stand aside.',
-      }[s.nerva.decision]||'');
-  const detailBg  = s.nerva.filtered ? '#ffcc4408' : sc+'08';
-  const detailBdr = s.nerva.filtered ? '#ffcc4430' : sc+'20';
-
-  const detailHTML=isExp?`<div style="padding:9px 11px;background:${C.panel};border-top:1px solid ${C.border}20;animation:fadeIn 0.2s ease">
-<div style="padding:6px 9px;border-radius:3px;margin-bottom:8px;background:${detailBg};border:1px solid ${detailBdr};font-size:8px;color:${C.txt};line-height:1.8">
-${decisionText}
-</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-<div>
-<div style="font-size:6.5px;color:${C.dim};letter-spacing:1.5px;margin-bottom:5px">MOVING AVERAGES</div>
-${[['20d',s.sma20],['50d',s.sma50],['200d',s.sma200]].map(([l,v])=>`<div style="display:flex;justify-content:space-between;font-size:8px;margin-bottom:3px"><span style="color:${C.dim}">${l} SMA</span><div style="display:flex;gap:4px;align-items:center"><span style="color:${C.txt}">$${fp(v)}</span><span style="font-size:6.5px;padding:1px 4px;border-radius:10px;background:${s.price>v?C.grn+'20':C.red+'20'};color:${s.price>v?C.grn:C.red}">${s.price>v?'ABV':'BLW'}</span></div></div>`).join('')}
-<div style="border-top:1px solid ${C.border};padding-top:4px;margin-top:4px">
-<div style="display:flex;justify-content:space-between;font-size:8px;margin-bottom:2px"><span style="color:${C.dim}">RSI (14)</span><span style="color:${s.rsi>70?C.red:s.rsi<30?C.grn:C.txt}">${s.rsi.toFixed(1)}</span></div>
-<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:${C.dim}">Volume</span><span style="color:${C.txt}">${fv(s.vol)}</span></div>
-</div></div>
-<div>
-<div style="font-size:6.5px;color:${C.dim};letter-spacing:1.5px;margin-bottom:5px">QUANTUM STATE</div>
-<div style="display:flex;gap:6px;align-items:flex-start">
-${miniBlochSVG(s.nerva.bloch,50,sc)}
-<div style="flex:1">${barHTML(s.nerva.coherence,'Coherence')}${barHTML(s.nerva.commitProb,'Commit Prob')}${barHTML(1-s.nerva.entropy,'Low Entropy')}</div>
-</div></div>
-</div></div>`:'';
-    return`<div style="border-bottom:1px solid ${C.border}18">
-<div class="hover-row" onclick="toggleExp('${s.sym}')" style="display:grid;grid-template-columns:46px 1fr 66px 50px 34px 96px 30px;padding:5px 9px;font-size:8px;background:${isExp?C.panel+'80':'transparent'}">
-<span style="color:${sc};font-weight:bold">${s.sym}</span>
-<span style="color:${C.mid};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</span>
-<span style="text-align:right;color:${C.bright}">$${fp(s.price)}</span>
-<span style="text-align:right;color:${s.chgPct>=0?C.grn:C.red}">${s.chgPct>=0?'+':''}${s.chgPct.toFixed(2)}%</span>
-<span style="text-align:right;color:${s.rsi>70?C.red:s.rsi<30?C.grn:C.txt}">${s.rsi.toFixed(0)}</span>
-<div style="display:flex;gap:3px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
-<span style="color:${sc};font-weight:bold">${s.nerva.decision}</span>
-<span style="font-size:6.5px;color:${s.bias==='LONG'?C.grn:C.red}">${s.bias}</span>
-${s.nerva.filtered?`<span style="font-size:6px;padding:1px 3px;border-radius:2px;background:#ffcc4420;color:#ffcc44;border:1px solid #ffcc4440">⚠</span>`:''}
-</div>
-<span style="text-align:right;color:${sc};font-weight:bold">${s.nerva.score}</span>
-</div>${detailHTML}</div>`;}).join('');
-
-  const decompRows=[['Volatility',25,cats.v],['Trend',20,cats.t],['Breadth',20,cats.b],['Momentum',25,cats.m],['Macro',10,cats.mc]].map(([name,w,sc])=>{
-    const c=sc>=70?C.grn:sc>=50?C.yel:C.red;
-    return`<div style="display:flex;align-items:center;gap:5px;padding:2px 0;font-size:8px">
-<span style="width:62px;color:${C.mid}">${name}</span>
-<span style="width:20px;color:${C.dim};text-align:right">${w}%</span>
-<div style="flex:1;height:4px;background:${C.bg};border-radius:2px;overflow:hidden;margin:0 4px"><div style="height:100%;width:${sc}%;background:${c};opacity:.7"></div></div>
-<span style="width:20px;color:${c};text-align:right;font-weight:bold">${sc}</span>
-<span style="width:24px;color:${C.dim};text-align:right">→${Math.round(w/100*sc)}</span>
-</div>`;}).join('');
-
-  const railStocks=port.map(s=>`<div style="padding:4px 5px;border-bottom:1px solid ${C.border}18">
-<div style="display:flex;justify-content:space-between"><span style="font-size:8px;color:${s.nerva.color};font-weight:bold">${s.sym}</span><span style="font-size:6px;color:${s.nerva.color};opacity:.7">${s.nerva.decision.slice(0,3)}</span></div>
-<div style="font-size:7px;color:${C.txt}">$${fp(s.price)}</div>
-<div style="font-size:6.5px;color:${s.chgPct>=0?C.grn:C.red}">${s.chgPct>=0?'+':''}${s.chgPct.toFixed(2)}%</div>
-${miniBlochSVG(s.nerva.bloch,40,s.nerva.color)}
-</div>`).join('');
-
-  return`<div style="background:${C.bg};height:100vh;display:flex;flex-direction:column;overflow:hidden">
-
-<!-- TICKER -->
-<div style="height:26px;background:${C.panel};border-bottom:1px solid ${C.border};overflow:hidden;position:relative;flex-shrink:0">
-<div id="ticker-inner" style="display:flex;position:absolute;top:0;left:0;height:26px;align-items:center;white-space:nowrap"></div>
-</div>
-
-<div style="flex:1;display:flex;overflow:hidden;min-height:0">
-
-<!-- RAIL -->
-<div style="width:66px;border-right:1px solid ${C.border};background:${C.panel};display:flex;flex-direction:column;padding:4px 0;overflow-y:auto;flex-shrink:0">
-<div style="font-size:6px;color:${C.dim};letter-spacing:1px;text-align:center;padding:3px 0 4px;border-bottom:1px solid ${C.border};margin-bottom:3px">POSITIONS</div>
-${railStocks}
-<div style="font-size:6px;color:${C.dim};letter-spacing:1px;text-align:center;padding:3px 0;border-top:1px solid ${C.border};margin-top:4px">MACRO</div>
-${[['SPY','$'+mkt.spy.price.toFixed(0),C.grn],['VIX',mkt.vix.level.toFixed(1),mkt.vix.level<20?C.grn:C.yel],['10Y',mkt.macro.tny.y.toFixed(2)+'%',C.txt],['DXY',mkt.macro.dxy.l.toFixed(1),C.txt]].map(([l,v,c])=>`<div style="display:flex;justify-content:space-between;padding:3px 5px;border-bottom:1px solid ${C.border}15"><span style="font-size:6.5px;color:${C.dim}">${l}</span><span style="font-size:7px;color:${c}">${v}</span></div>`).join('')}
-</div>
-
-<!-- MAIN -->
-<div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0">
-
-${mkt.macro.fomc<3?`<div style="background:${C.red}12;border-bottom:1px solid ${C.red}30;padding:4px 12px;font-size:8px;color:${C.red};flex-shrink:0;animation:blink 1s infinite">⚠ FOMC WITHIN 72h — REDUCE POSITION SIZING</div>`:''}
-
-<!-- TOP BAR -->
-<div style="border-bottom:1px solid ${C.border};padding:5px 12px;display:flex;justify-content:space-between;align-items:center;background:${C.panel};flex-shrink:0">
-<div style="display:flex;align-items:center;gap:8px">
-<span style="color:${C.acc};font-size:12px;font-weight:bold;letter-spacing:3px">◉ NERVA</span>
-<span style="color:${C.dim};font-size:7px;letter-spacing:1.5px">MARKET v4.0</span>
-<div style="display:flex;align-items:center;gap:3px">
-<div style="width:5px;height:5px;border-radius:50%;background:${S.isLive?C.grn:C.yel};animation:pulse 2s infinite"></div>
-<span style="font-size:7px;color:${S.isLive?C.grn:C.yel};letter-spacing:1px">${S.isLive?'LIVE':'SIMULATION'}</span>
-</div>
-</div>
-<div style="display:flex;gap:6px;align-items:center">
-<span id="sec-ago" style="font-size:7.5px;color:${C.dim}">${S.secAgo}s ago</span>
-<button id="refresh-btn" style="background:${C.border};border:none;border-radius:3px;color:${C.acc};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">↻</button>
-<div style="display:flex;border:1px solid ${C.border};border-radius:3px;overflow:hidden">
-<button id="btn-sw" onclick="setMode('swing')" style="background:${S.mode==='swing'?C.accd:'transparent'};border:none;color:${S.mode==='swing'?C.bright:C.dim};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">SWING</button>
-<button id="btn-dy" onclick="setMode('day')"   style="background:${S.mode==='day'?C.accd:'transparent'};border:none;color:${S.mode==='day'?C.bright:C.dim};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">DAY</button>
-</div>
-<button onclick="showGuide()" style="background:none;border:1px solid ${C.acc}40;border-radius:3px;color:${C.acc};font-size:7px;padding:3px 8px;cursor:pointer;font-family:${M}">? GUIDE</button>
-</div>
-</div>
-
-<!-- SCROLL BODY -->
-<div style="flex:1;overflow-y:auto;padding:9px 11px;scrollbar-width:thin;scrollbar-color:${C.border} transparent">
-
-<!-- HERO -->
-<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;padding:12px 14px;border:1px solid ${dc}22;border-radius:5px;background:linear-gradient(135deg,${C.panel}60,${dc}04);margin-bottom:9px">
-<div>
-<div class="tt" data-tip="NERVA DECISION STATE&#10;COMMIT: High coherence, low entropy. Act.&#10;HOLD: Mixed signal. A+ setups only.&#10;WAIT: Too noisy. Preserve capital.&#10;ESCALATE: State near AVOID. Hedge.&#10;TOXIC: Max entropy. No action." style="font-size:6.5px;color:${C.mid};letter-spacing:2.5px;margin-bottom:3px;cursor:help">NERVA DECISION STATE (?)</div>
-<div style="font-size:24px;font-weight:bold;color:${dc};letter-spacing:3px;text-shadow:0 0 20px ${dc}40">${mktR.decision}</div>
-<div style="margin-top:5px;display:flex;gap:4px">
-<span style="font-size:6.5px;letter-spacing:1px;padding:2px 5px;border:1px solid ${dc}40;border-radius:2px;color:${dc};background:${dc}10">${mktR.zone}</span>
-<span style="font-size:6.5px;letter-spacing:1px;padding:2px 5px;border:1px solid ${C.accd}50;border-radius:2px;color:${C.acc};background:${C.accd}20">${S.mode.toUpperCase()}</span>
-</div>
-<div style="margin-top:6px;font-size:8px;color:${C.mid};line-height:1.7">
-<span style="color:${C.dim}">Regime: </span><span style="color:${C.txt}">${regime}</span><br>
-<span style="color:${C.dim}">SPY: </span><span style="color:${mkt.spy.chgPct>=0?C.grn:C.red}">${mkt.spy.chgPct>=0?'+':''}${(mkt.spy.chgPct||0).toFixed(2)}%</span>
-<span style="color:${C.dim};margin:0 4px">·</span>
-<span style="color:${C.dim}">VIX: </span><span style="color:${mkt.vix.level<20?C.grn:mkt.vix.level<25?C.yel:C.red}">${mkt.vix.level.toFixed(1)}</span>
-</div>
-</div>
-<div style="display:flex;gap:8px;align-items:center">
-<div class="tt" data-tip="MARKET QUALITY SCORE&#10;Weighted composite: Volatility 25%&#10;Momentum 25% + Trend 20%&#10;Breadth 20% + Macro 10%&#10;&#10;80-100: COMMIT (full size)&#10;60-79: CAUTION (half size)&#10;Below 60: NO TRADE">${scoreRingSVG(mktR.score,92,'Market Quality')}</div>
-<div class="tt" data-tip="EXECUTION WINDOW&#10;NOT included in main score.&#10;Are breakouts holding?&#10;Is there gain retention after entry?&#10;Are pullbacks being bought?&#10;Low score = chop inside trend.">${scoreRingSVG(execS,66,'Execution')}</div>
-</div>
-<div style="display:flex;justify-content:flex-end">${qpanel}</div>
-</div>
-
-<!-- CATS -->
-<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:9px">
-${catCard('Volatility','◈',cats.v,[{l:'VIX',v:mkt.vix.level.toFixed(1),d:mkt.vix.trend5d<0?'↓':'↑',c:mkt.vix.level<20?C.grn:mkt.vix.level<25?C.yel:C.red},{l:'VVIX',v:mkt.vvix.level.toFixed(0)},{l:'P/C',v:mkt.putCall.ratio.toFixed(2),c:mkt.putCall.ratio<.9?C.grn:mkt.putCall.ratio<1.1?C.yel:C.red}])}
-${catCard('Trend','◇',cats.t,[{l:'20d',v:mkt.spy.price>mkt.spy.sma20?'ABV':'BLW',c:mkt.spy.price>mkt.spy.sma20?C.grn:C.red},{l:'50d',v:mkt.spy.price>mkt.spy.sma50?'ABV':'BLW',c:mkt.spy.price>mkt.spy.sma50?C.grn:C.red},{l:'200d',v:mkt.spy.price>mkt.spy.sma200?'ABV':'BLW',c:mkt.spy.price>mkt.spy.sma200?C.grn:C.red},{l:'RSI',v:mkt.spy.rsi.toFixed(0),c:mkt.spy.rsi>70?C.red:mkt.spy.rsi<30?C.grn:C.txt}])}
-${catCard('Breadth','◎',cats.b,[{l:'>20d',v:mkt.breadth.a20.toFixed(0)+'%',c:mkt.breadth.a20>60?C.grn:C.yel},{l:'>50d',v:mkt.breadth.a50.toFixed(0)+'%'},{l:'>200d',v:mkt.breadth.a200.toFixed(0)+'%'},{l:'A/D',v:mkt.breadth.ad.toFixed(2),c:mkt.breadth.ad>1?C.grn:C.red}])}
-${catCard('Momentum','◆',cats.m,[{l:'Sec+',v:Object.values(mkt.sectors).filter(v=>v>0).length+'/11'},{l:'Spread',v:mkt.spread.toFixed(1)+'%',c:mkt.spread>1?C.grn:C.yel},{l:'NH/NL',v:mkt.breadth.nhNl.toFixed(1),c:mkt.breadth.nhNl>1.5?C.grn:C.yel}])}
-${catCard('Macro','◫',cats.mc,[{l:'10Y',v:mkt.macro.tny.y.toFixed(2)+'%',d:mkt.macro.tny.t==='rising'?'↑':'↓',c:mkt.macro.tny.y<4.5?C.grn:C.yel},{l:'DXY',v:mkt.macro.dxy.l.toFixed(1)},{l:'Fed',v:mkt.macro.fed.toUpperCase(),c:mkt.macro.fed==='dovish'?C.grn:mkt.macro.fed==='neutral'?C.yel:C.red},{l:'FOMC',v:mkt.macro.fomc+'d',c:mkt.macro.fomc<3?C.red:mkt.macro.fomc<7?C.orn:C.mid}])}
-</div>
-
-<!-- SECTOR + ANALYSIS -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px">
-<div style="border:1px solid ${C.border};border-radius:4px;padding:8px 10px;background:${C.panel}">
-<div style="font-size:7px;color:${C.mid};letter-spacing:2px;margin-bottom:6px"><span style="color:${C.acc};margin-right:3px">▦</span>SECTOR HEATMAP</div>
-${sectorRows}
-</div>
-<div style="display:flex;flex-direction:column;gap:7px">
-<div style="padding:9px 11px;border:1px solid ${dc}18;border-radius:4px;background:${dc}05;flex:1">
-<div style="font-size:7px;color:${dc};letter-spacing:2px;margin-bottom:5px">◉ TERMINAL ANALYSIS</div>
-<div style="font-size:8.5px;line-height:1.75;color:${C.txt}">${analysis}</div>
-</div>
-<div style="border:1px solid ${C.border};border-radius:4px;padding:8px 10px;background:${C.panel}">
-<div style="font-size:7px;color:${C.mid};letter-spacing:2px;margin-bottom:5px"><span style="color:${C.acc};margin-right:3px">⚡</span>EXECUTION WINDOW
-<span style="float:right;font-size:6px;padding:1px 5px;border:1px solid ${C.dim}40;color:${C.dim};border-radius:2px">SEPARATE SCORE</span>
-</div>
-<div style="font-size:16px;font-weight:bold;color:${execS>=70?C.grn:execS>=50?C.yel:C.red};margin-bottom:5px">${execS}<span style="font-size:8px;color:${C.mid}">/100</span></div>
-${barHTML(mkt.exec.br,'Breakouts Holding')}${barHTML(mkt.exec.rt,'Gain Retention')}${barHTML(mkt.exec.pb,'Pullback Buying')}${barHTML(mkt.exec.ft,'Follow-Through')}
-</div>
-</div>
-</div>
-
-<!-- STOCK TABLE -->
-<div style="border:1px solid ${C.border};border-radius:4px;overflow:hidden;margin-bottom:9px">
-<div style="display:flex;background:${C.panel};border-bottom:1px solid ${C.border}">
-<button onclick="setTab('portfolio')" style="background:transparent;border:none;border-bottom:2px solid ${tab==='portfolio'?C.acc:'transparent'};color:${tab==='portfolio'?C.acc:C.dim};font-size:8px;padding:5px 11px;cursor:pointer;font-family:${M};letter-spacing:1px">◈ MY PORTFOLIO</button>
-<button onclick="setTab('watchlist')" style="background:transparent;border:none;border-bottom:2px solid ${tab==='watchlist'?C.acc:'transparent'};color:${tab==='watchlist'?C.acc:C.dim};font-size:8px;padding:5px 11px;cursor:pointer;font-family:${M};letter-spacing:1px">◆ OPPORTUNITY SURFACE (25)</button>
-</div>
-<div style="display:grid;grid-template-columns:46px 1fr 66px 50px 34px 96px 30px;padding:4px 9px;font-size:7px;color:${C.dim};border-bottom:1px solid ${C.border}">
-<span>SYM</span><span>NAME</span><span style="text-align:right">PRICE</span><span style="text-align:right">CHG%</span><span style="text-align:right">RSI</span><span style="text-align:right">STATE</span><span style="text-align:right">NQ</span>
-</div>
-${stockRows}
-</div>
-
-<!-- DECOMP -->
-<div style="border:1px solid ${C.border};border-radius:4px;padding:8px 10px;background:${C.panel};margin-bottom:9px">
-<div style="font-size:7px;color:${C.mid};letter-spacing:2px;margin-bottom:6px"><span style="color:${C.acc};margin-right:3px">≡</span>SCORE DECOMPOSITION</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px">${decompRows}</div>
-<div style="margin-top:7px;padding-top:6px;border-top:1px solid ${C.border};display:flex;justify-content:space-between;align-items:center">
-<span style="font-size:7.5px;color:${C.dim}">WEIGHTED MARKET QUALITY SCORE</span>
-<span style="font-size:13px;color:${mktR.score>=80?C.grn:mktR.score>=60?C.yel:C.red};font-weight:bold">${mktR.score} / 100</span>
-</div>
-</div>
-
-<div style="text-align:center;padding:5px 0 2px;font-size:6px;color:${C.dim};letter-spacing:2px">NERVA MARKET v4.0 — QUANTUM DECISION INTELLIGENCE — STARPOINT ENTERPRISES LLC — AMDG</div>
-</div><!-- end scroll body -->
-</div><!-- end main -->
-</div><!-- end flex row -->
-
-</div>`;
-}
-
-// ── STATIC GUIDE (outside renderAll — persists across renders) ──
-function buildGuide() {
-  const g = document.getElementById('guide');
-  if (g._built) return;
-  g._built = true;
-  g.innerHTML = `
-<div style="background:#091524;border:1px solid #162840;border-radius:6px;max-width:580px;width:100%;max-height:85vh;overflow-y:auto;padding:16px 18px;scrollbar-width:thin;">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-<div>
-  <div style="font-size:12px;color:#4a9eff;font-weight:bold;letter-spacing:2px">◉ NERVA MARKET v4.0</div>
-  <div style="font-size:7px;color:#253d55;letter-spacing:1.5px">QUANTUM DECISION INTELLIGENCE — USER GUIDE</div>
-</div>
-<button onclick="hideGuide()" style="background:#162840;border:none;color:#8aafc5;font-size:8px;padding:4px 9px;border-radius:3px;cursor:pointer;font-family:monospace">✕ CLOSE</button>
-</div>
-<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">WHAT IS THIS?</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">NERVA Market evaluates the stock market using quantum decision mathematics. Market conditions map to a Bloch sphere state vector. Where that vector points determines the decision: COMMIT, HOLD, WAIT, ESCALATE, or TOXIC.</div></div>
-<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">THE FIVE NERVA PARAMETERS</div><div style="font-size:9px;color:#8aafc5;line-height:2.0">
-<span style="color:#00e891">E Urgency</span> — Time pressure. VIX regime + FOMC proximity.<br>
-<span style="color:#00e891">S Strategy</span> — Trend alignment. SPY/QQQ vs moving averages.<br>
-<span style="color:#00e891">R Risk</span> — Systemic risk. VIX level + RSI extremes + put/call ratio.<br>
-<span style="color:#00e891">Support</span> — Market breadth + sector participation.<br>
-<span style="color:#00e891">Stability</span> — Fed stance + execution quality.
-</div></div>
-<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">THE QUANTUM MATH</div>
-<div style="background:#040c18;border:1px solid #162840;border-radius:3px;padding:6px 10px;margin:4px 0 6px;font-size:11px;color:#00e891;">|ψ⟩ = cos(θ/2)|COMMIT⟩ + e^(iφ)sin(θ/2)|AVOID⟩</div>
-<div style="font-size:9px;color:#8aafc5;line-height:1.8">θ (polar) computed from S, Support, Stability, inverse R. φ (azimuthal) set by Urgency. The density matrix ρ = |ψ⟩⟨ψ| yields: S(ρ) von Neumann entropy, |ρ₀₁| coherence, ρ₀₀ commit probability. Entropy is smoothed (max(raw, 0.05×(1−coh))) to prevent false 0% readings.</div></div>
-<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">DECISION STATES</div>
-<div style="display:flex;gap:8px;margin-bottom:4px;padding-left:8px"><span style="color:#00e891;font-weight:bold;min-width:64px">COMMIT</span><span style="color:#4a6a85;font-size:9px">High coherence + commit prob + low entropy. Act with full conviction.</span></div>
-<div style="display:flex;gap:8px;margin-bottom:4px;padding-left:8px"><span style="color:#ffcc44;font-weight:bold;min-width:64px">HOLD</span><span style="color:#4a6a85;font-size:9px">Mixed signal. A+ setups only, half size.</span></div>
-<div style="display:flex;gap:8px;margin-bottom:4px;padding-left:8px"><span style="color:#4a6a85;font-weight:bold;min-width:64px">WAIT</span><span style="color:#4a6a85;font-size:9px">High entropy. No reliable signal. Stand aside.</span></div>
-<div style="display:flex;gap:8px;margin-bottom:4px;padding-left:8px"><span style="color:#ff7733;font-weight:bold;min-width:64px">ESCALATE</span><span style="color:#4a6a85;font-size:9px">State near |AVOID⟩. Hedge or reduce exposure.</span></div>
-<div style="display:flex;gap:8px;margin-bottom:4px;padding-left:8px"><span style="color:#ff3d5a;font-weight:bold;min-width:64px">TOXIC</span><span style="color:#4a6a85;font-size:9px">Max entropy, zero coherence. No action whatsoever.</span></div>
-</div>
-<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">LONG vs SHORT BIAS</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">NERVA measures signal quality, not direction. LONG/SHORT derives from price vs 50d SMA. COMMIT+LONG = highest confidence entry. COMMIT+SHORT = signal clean but trend negative — defensive only.</div></div>
-<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">THE BLOCH SPHERE</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">The green dot IS the decision state — not a metaphor. Top = |COMMIT⟩, Bottom = |AVOID⟩. The three numbers below (S(ρ), |ρ₀₁|, ρ₀₀) are direct density matrix readouts quantifying exactly what the sphere shows visually.</div></div>
-<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">OPPORTUNITY SURFACE</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">Scans 25 names transitioning from WAIT toward COMMIT — rising coherence, dropping entropy. Early signals before price confirmation. Ranked: coherence×0.4 + commitProb×0.35 + (1−entropy)×0.25.</div></div>
-<div style="padding:8px 10px;background:#4a9eff08;border:1px solid #4a9eff12;border-radius:4px;font-size:8px;color:#4a6a85;line-height:1.7">
-<span style="color:#4a9eff">DATA</span> — Live deployment pulls Yahoo Finance via /api/market.js Vercel proxy. Simulation mode activates when proxy unavailable. NERVA is a decision integrity framework — not financial advice.<br>
-<span style="color:#253d55">STARPOINT ENTERPRISES LLC — AMDG</span>
-</div>
-</div>`;
-}
-
-
-// ── TICKER ──
-function startTicker(){
-  const{mkt,port}=S;
-  if(!mkt)return;
-  const items=[
-    {sym:'SPY',p:mkt.spy.price,ch:mkt.spy.chgPct||0},
-    {sym:'QQQ',p:mkt.qqq.price,ch:mkt.qqq.chgPct||0},
-    {sym:'VIX',p:mkt.vix.level,ch:mkt.vix.chgPct||0,raw:true},
-    {sym:'10Y',p:mkt.macro.tny.y,ch:0,pct:true},
-    {sym:'DXY',p:mkt.macro.dxy.l,ch:0,raw:true},
-    ...port.map(s=>({sym:s.sym,p:s.price,ch:s.chgPct,nc:s.nerva.color,nd:s.nerva.decision.slice(0,3)})),
-    ...(mkt.sorted||[]).slice(0,5).map(([s,v])=>({sym:s,ch:v,p:null})),
-  ];
-  const triple=[...items,...items,...items];
-  const el=document.getElementById('ticker-inner');
-  if(!el)return;
-  const iW=132;
-  el.innerHTML=triple.map(t=>{
-    const neg=t.ch<0,vc=neg?C.red:C.grn;
-    const fmt=t.pct?t.p.toFixed(2)+'%':t.raw?t.p.toFixed(2):t.p?'$'+fp(t.p):null;
-    return`<div style="display:inline-flex;align-items:center;gap:5px;padding:0 11px;border-right:1px solid ${C.border}20;height:26px;min-width:${iW}px">
-<span style="font-size:8px;color:${t.nc||C.acc};font-weight:bold">${t.sym}</span>
-${t.nd?`<span style="font-size:6px;color:${t.nc};opacity:.7">${t.nd}</span>`:''}
-${fmt?`<span style="font-size:8px;color:${C.txt}">${fmt}</span>`:''}
-<span style="font-size:7.5px;color:${vc}">${neg?'▼':'▲'}${Math.abs(t.ch).toFixed(2)}%</span>
-</div>`;}).join('');
-  const total=items.length*iW;
-  if(window._tickerIv)clearInterval(window._tickerIv);
-  window._tickerIv=setInterval(()=>{
-    tickerOffset-=0.55;
-    const el2=document.getElementById('ticker-inner');
-    if(el2)el2.style.transform=`translateX(${tickerOffset%total}px)`;
-  },25);
-}
-
-// ── ACTIONS ──
-window.toggleExp=function(sym){S.exp=S.exp===sym?null:sym;renderAll();}
-window.setTab=function(t){S.tab=t;S.exp=null;renderAll();}
-window.setMode=function(m){S.mode=m;doRefresh();}
-window.showGuide=function(){buildGuide();const g=document.getElementById('guide');if(g){g.style.display='flex';}}
-window.hideGuide=function(){const g=document.getElementById('guide');if(g){g.style.display='none';}}
-
-window.doRefresh=async function(){
-  try{
-  const live=await fetchLiveData();
-  let d;
-  if(live){d=live;S.isLive=true;}
-  else{d=genMarket(S.tick);S.isLive=false;}
-  const rawP=mktParams(d);
-  const adj=S.mode==='day'?{...rawP,E:Math.min(1,rawP.E*1.3),R:Math.min(1,rawP.R*1.2)}:rawP;
-  const res=NERVA.classify(adj);
-  const pd=PDEFS.map((s,i)=>genStock(s,i,S.tick));
-  const ud=UDEFS.map((s,i)=>genStock(s,i+100,S.tick))
-    .sort((a,b)=>(b.nerva.coherence*.4+b.nerva.commitProb*.35+(1-b.nerva.entropy)*.25)-(a.nerva.coherence*.4+a.nerva.commitProb*.35+(1-a.nerva.entropy)*.25));
-  const vl=d.vix.level;
-  const vs=Math.min(100,Math.max(0,Math.round((1-Math.min(1,(vl-10)/25))*70+(d.vix.trend5d<0?20:0)+(d.putCall.ratio<1?10:0))));
-  const ts=Math.min(100,Math.max(0,Math.round(adj.S*100)));
-  const bs=Math.min(100,Math.max(0,Math.round((d.breadth.a20+d.breadth.a50+d.breadth.a200)/3)));
-  const ms=Math.min(100,Math.max(0,Math.round((Object.values(d.sectors).filter(v=>v>0).length/11)*60+Math.min(40,d.spread*20))));
-  const mc=Math.min(100,Math.max(0,Math.round((d.macro.fed==='dovish'?40:25)+(d.macro.tny.y<4.5?20:10)+(d.macro.fomc>7?20:5)+(d.macro.dxy.t==='weak'?20:10))));
-  const ex=Math.round((d.exec.br*.3+d.exec.rt*.25+d.exec.pb*.25+d.exec.ft*.2)*100);
-  S={...S,mkt:d,mktR:res,port:pd,uni:ud,cats:{v:vs,t:ts,b:bs,m:ms,mc},execS:ex,secAgo:0,tick:S.tick+1};
-  renderAll();
-  }catch(err){
-    console.error('NERVA refresh error:',err);
-    S.isLive=false;
-    const d2=genMarket(S.tick);
-    const rawP2=mktParams(d2);
-    const res2=NERVA.classify(rawP2);
-    const pd2=PDEFS.map((s,i)=>genStock(s,i,S.tick));
-    const ud2=UDEFS.map((s,i)=>genStock(s,i+100,S.tick)).sort((a,b)=>(b.nerva.coherence*.4+b.nerva.commitProb*.35+(1-b.nerva.entropy)*.25)-(a.nerva.coherence*.4+a.nerva.commitProb*.35+(1-a.nerva.entropy)*.25));
-    const vl2=d2.vix.level;
-    const vs2=Math.min(100,Math.max(0,Math.round((1-Math.min(1,(vl2-10)/25))*70+(d2.vix.trend5d<0?20:0)+(d2.putCall.ratio<1?10:0))));
-    const ts2b=Math.min(100,Math.max(0,Math.round(rawP2.S*100)));
-    const bs2=Math.min(100,Math.max(0,Math.round((d2.breadth.a20+d2.breadth.a50+d2.breadth.a200)/3)));
-    const ms2=Math.min(100,Math.max(0,Math.round((Object.values(d2.sectors).filter(v=>v>0).length/11)*60+Math.min(40,d2.spread*20))));
-    const mc2=Math.min(100,Math.max(0,Math.round(25+(d2.macro.tny.y<4.5?20:10)+(d2.macro.fomc>7?20:5))));
-    const ex2=Math.round((d2.exec.br*.3+d2.exec.rt*.25+d2.exec.pb*.25+d2.exec.ft*.2)*100);
-    S={...S,mkt:d2,mktR:res2,port:pd2,uni:ud2,cats:{v:vs2,t:ts2b,b:bs2,m:ms2,mc:mc2},execS:ex2,secAgo:0,tick:S.tick+1};
-    renderAll();
-  }
-}
-
-// ── CLOCK ──
-setInterval(()=>{S.secAgo++;const el=document.getElementById('sec-ago');if(el)el.textContent=S.secAgo+'s ago';},1000);
-setInterval(()=>doRefresh(),45000);
-
-doRefresh();
+    fetchNerva();
+    setInterval(fetchNerva, 60000);
 </script>
+
 </body>
 </html>
