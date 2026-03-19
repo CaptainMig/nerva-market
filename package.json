@@ -1,0 +1,188 @@
+# NERVA MARKET v3.0 — Deployment Guide
+## Quantum Decision Intelligence for Markets
+### Starpoint Enterprises LLC
+
+---
+
+## Architecture
+
+```
+nerva-market/
+├── index.html          ← Single HTML file (compiled from JSX artifact)
+├── api/
+│   └── market.js       ← Vercel serverless proxy (api-market.js)
+├── vercel.json         ← Optional: route config
+└── package.json        ← Minimal, for Vercel detection
+```
+
+Same pattern as your AnthonyCharts deployments:
+- Single HTML file auto-deployed via GitHub → Vercel
+- Serverless function in `/api/` handles CORS-restricted API calls
+- 30-second server-side cache reduces Yahoo Finance load
+
+---
+
+## Setup Steps
+
+### 1. Create Vercel Project
+
+```bash
+# In your CaptainMig GitHub org
+mkdir nerva-market && cd nerva-market
+git init
+```
+
+### 2. Add the Proxy
+
+Copy `api-market.js` to `api/market.js`:
+
+```bash
+mkdir api
+cp api-market.js api/market.js
+```
+
+### 3. Add package.json
+
+```json
+{
+  "name": "nerva-market",
+  "version": "3.0.0",
+  "private": true
+}
+```
+
+### 4. Add vercel.json (optional, for clean routing)
+
+```json
+{
+  "rewrites": [
+    { "source": "/api/market", "destination": "/api/market" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "s-maxage=30, stale-while-revalidate" }
+      ]
+    }
+  ]
+}
+```
+
+### 5. Convert JSX to Standalone HTML
+
+The artifact JSX needs to be compiled into a single HTML file. In your build session with Sonnet, you'll:
+
+1. Take the React JSX from `nerva-market-v3.jsx`
+2. Wrap it in a standalone HTML file with:
+   - React + ReactDOM from CDN
+   - Babel standalone for JSX transformation
+   - All styles inline
+3. Replace simulated data generators with:
+   ```javascript
+   async function fetchLiveData() {
+     const resp = await fetch('/api/market');
+     const data = await resp.json();
+     return data;
+   }
+   ```
+
+### 6. Deploy
+
+```bash
+git add .
+git commit -m "NERVA Market v3.0 — live deployment"
+git push origin main
+```
+
+Vercel auto-deploys from GitHub push.
+
+---
+
+## Data Flow
+
+```
+Frontend (45s interval)
+    ↓ fetch('/api/market')
+Vercel Serverless Function
+    ↓ Yahoo Finance v7/v8 API
+    ↓ (30s server cache)
+    ↓ Returns structured JSON
+Frontend
+    ↓ marketToNERVA() parameter mapping
+    ↓ NERVA.classify() quantum engine
+    ↓ Render decision state
+```
+
+---
+
+## API Response Structure
+
+The proxy returns:
+
+```json
+{
+  "timestamp": "2026-03-19T15:30:00Z",
+  "source": "yahoo_finance",
+  "spy": { "price", "sma20", "sma50", "sma200", "rsi" },
+  "qqq": { "price", "sma50", "rsi" },
+  "vix": { "level", "trend5d" },
+  "vvix": { "level" },
+  "putCall": { "ratio" },
+  "breadth": { "above20d", "above50d", "above200d", "advDeclineRatio" },
+  "sectors": { "XLK": 1.2, "XLF": -0.3, ... },
+  "macro": {
+    "tenYear": { "yield", "trend" },
+    "dxy": { "level", "trend" },
+    "fedStance": "neutral",
+    "fomcDays": 12
+  },
+  "portfolio": [ { "sym", "price", "changePct", "sma50", "sma200" } ],
+  "universe": [ { "sym", "price", "changePct", "sma50", "sma200" } ]
+}
+```
+
+---
+
+## Future Enhancements
+
+### Better Breadth Data
+Yahoo Finance doesn't provide advance/decline or stocks-above-MA breadth data.
+Options:
+- **Barchart OnDemand API** (free tier: 400 calls/day)
+- **StockAnalysis.com API** (breadth indicators)
+- **FRED** (McClellan Oscillator data via FRED API)
+
+### Real Put/Call Ratio
+- **CBOE** publishes daily P/C ratio
+- Can scrape or use Quandl/Nasdaq Data Link
+
+### Execution Window (Live)
+The hardest metric to automate. Options:
+- Track breakout stocks via screener API (Finviz, TradingView)
+- Compute breakout hold rate from historical data
+- Manual override input for experienced traders
+
+### Additional Portfolio Stocks
+The proxy accepts any symbols. To add stocks to your portfolio:
+1. Add to `MARKET_SYMBOLS` array in `api/market.js`
+2. Add to `PORTFOLIO_DEFS` array in the frontend
+3. Redeploy
+
+---
+
+## Notes
+
+- Yahoo Finance v7 quote endpoint may require a crumb/cookie in some regions.
+  If you get 401 errors, switch to **Alpha Vantage** (free API key, 25 calls/min)
+  or **Twelve Data** (800 calls/day free tier).
+  
+- The FOMC calendar in the proxy is hardcoded for 2026. Update annually
+  from federalreserve.gov.
+
+- The NERVA quantum engine runs entirely client-side. The proxy only
+  provides raw market data. All intelligence is in the browser.
+
+---
+
+AMDG
