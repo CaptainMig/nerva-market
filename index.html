@@ -21,6 +21,7 @@ body{background:#040c18;font-family:'JetBrains Mono','Courier New',monospace;col
 </style>
 </head>
 <body>
+<div id="guide" style="display:none;position:fixed;inset:0;background:rgba(2,8,18,0.95);z-index:200;align-items:center;justify-content:center;padding:16px;"></div>
 <div id="root"><div style="height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:#040c18;">
   <div style="color:#4a9eff;font-family:monospace;font-size:13px;letter-spacing:2px;animation:pulse 1.5s infinite">◉ NERVA MARKET v4.0</div>
   <div style="color:#253d55;font-family:monospace;font-size:9px;letter-spacing:2px;">INITIALIZING QUANTUM ENGINE...</div>
@@ -186,6 +187,9 @@ function renderAll(){
   if(!S.mkt||!S.mktR||!S.cats){root.innerHTML=loadingHTML();return;}
   root.innerHTML=appHTML();
   startTicker();
+  // Re-attach refresh button after DOM rebuild
+  const rb=document.getElementById('refresh-btn');
+  if(rb) rb.onclick=()=>doRefresh();
 }
 
 function loadingHTML(){
@@ -328,7 +332,7 @@ ${mkt.macro.fomc<3?`<div style="background:${C.red}12;border-bottom:1px solid ${
 </div>
 <div style="display:flex;gap:6px;align-items:center">
 <span id="sec-ago" style="font-size:7.5px;color:${C.dim}">${S.secAgo}s ago</span>
-<button onclick="doRefresh()" style="background:${C.border};border:none;border-radius:3px;color:${C.acc};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">↻</button>
+<button id="refresh-btn" style="background:${C.border};border:none;border-radius:3px;color:${C.acc};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">↻</button>
 <div style="display:flex;border:1px solid ${C.border};border-radius:3px;overflow:hidden">
 <button id="btn-sw" onclick="setMode('swing')" style="background:${S.mode==='swing'?C.accd:'transparent'};border:none;color:${S.mode==='swing'?C.bright:C.dim};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">SWING</button>
 <button id="btn-dy" onclick="setMode('day')"   style="background:${S.mode==='day'?C.accd:'transparent'};border:none;color:${S.mode==='day'?C.bright:C.dim};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">DAY</button>
@@ -420,25 +424,51 @@ ${stockRows}
 </div><!-- end main -->
 </div><!-- end flex row -->
 
-<!-- GUIDE -->
-<div id="guide" style="display:none;position:fixed;inset:0;background:rgba(2,8,18,0.93);z-index:100;align-items:center;justify-content:center;padding:16px">
-<div style="background:${C.panel};border:1px solid ${C.border};border-radius:6px;max-width:580px;width:100%;max-height:85vh;overflow-y:auto;padding:16px 18px">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-<div><div style="font-size:12px;color:${C.acc};font-weight:bold;letter-spacing:2px">◉ NERVA MARKET v4.0</div>
-<div style="font-size:7px;color:${C.dim};letter-spacing:1.5px">QUANTUM DECISION INTELLIGENCE — USER GUIDE</div></div>
-<button onclick="hideGuide()" style="background:${C.border};border:none;color:${C.txt};font-size:8px;padding:4px 9px;border-radius:3px;cursor:pointer;font-family:${M}">✕ CLOSE</button>
-</div>
-${[['WHAT IS THIS?','NERVA Market evaluates the stock market using quantum decision mathematics. Market conditions map to a Bloch sphere state vector. Where that vector points determines the decision: COMMIT, HOLD, WAIT, ESCALATE, or TOXIC.'],['THE QUANTUM MATH','θ (polar) is computed from S, Support, Stability, and inverse R — proximity to |COMMIT⟩ vs |AVOID⟩. φ (azimuthal) is set by Urgency. The density matrix ρ = |ψ⟩⟨ψ| yields three measurable outputs: S(ρ) von Neumann entropy, |ρ₀₁| coherence, ρ₀₀ commit probability. Entropy has a smoothed floor (0.05×(1−coh)) to prevent false 0% readings.'],['LONG vs SHORT BIAS','NERVA measures signal quality, not direction. LONG/SHORT derives from price vs 50d SMA. COMMIT+LONG = highest confidence entry. COMMIT+SHORT = signal clean but trend negative — defensive or contrarian only.'],['THE BLOCH SPHERE','The green dot IS the decision state. Top = |COMMIT⟩. Bottom = |AVOID⟩. The three numbers below (S(ρ), |ρ₀₁|, ρ₀₀) are direct density matrix readouts — they quantify exactly what the sphere shows visually.'],['OPPORTUNITY SURFACE','Scans 25 names for stocks transitioning from WAIT toward COMMIT — rising coherence, dropping entropy. Early signals before price confirmation. Ranked by: coherence×0.4 + commitProb×0.35 + (1−entropy)×0.25.']].map(([t,b])=>`<div style="margin-bottom:12px"><div style="font-size:7.5px;color:${C.acc};letter-spacing:2px;margin-bottom:4px">${t}</div><div style="font-size:9px;color:${C.txt};line-height:1.8">${b}</div></div>`).join('')}
-<div style="margin-bottom:12px"><div style="font-size:7.5px;color:${C.acc};letter-spacing:2px;margin-bottom:4px">DECISION STATES</div>
-${[[C.grn,'COMMIT','High coherence + commit prob + low entropy. Act with conviction.'],[C.yel,'HOLD','Mixed signal. A+ setups only, half size.'],[C.mid,'WAIT','High entropy. No reliable signal. Stand aside.'],[C.orn,'ESCALATE','State near |AVOID⟩. Hedge or reduce exposure.'],[C.red,'TOXIC','Max entropy, zero coherence. No action.']].map(([c,n,d])=>`<div style="display:flex;gap:8px;margin-bottom:4px;padding-left:8px"><span style="color:${c};font-weight:bold;min-width:60px">${n}</span><span style="color:${C.mid};font-size:9px">${d}</span></div>`).join('')}
-</div>
-<div style="padding:8px 10px;background:${C.acc}06;border:1px solid ${C.acc}10;border-radius:4px;font-size:8px;color:${C.mid};line-height:1.7">
-<span style="color:${C.acc}">DATA</span> — Live deployment pulls Yahoo Finance via /api/market.js Vercel proxy. This mode uses simulation when proxy is unavailable. NERVA is a decision integrity framework — not financial advice.<br>
-<span style="color:${C.dim}">STARPOINT ENTERPRISES LLC — AMDG</span></div>
-</div></div>
-
 </div>`;
 }
+
+// ── STATIC GUIDE (outside renderAll — persists across renders) ──
+function buildGuide() {
+  const g = document.getElementById('guide');
+  if (g._built) return;
+  g._built = true;
+  g.innerHTML = `
+<div style="background:#091524;border:1px solid #162840;border-radius:6px;max-width:580px;width:100%;max-height:85vh;overflow-y:auto;padding:16px 18px;scrollbar-width:thin;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+<div>
+  <div style="font-size:12px;color:#4a9eff;font-weight:bold;letter-spacing:2px">◉ NERVA MARKET v4.0</div>
+  <div style="font-size:7px;color:#253d55;letter-spacing:1.5px">QUANTUM DECISION INTELLIGENCE — USER GUIDE</div>
+</div>
+<button onclick="hideGuide()" style="background:#162840;border:none;color:#8aafc5;font-size:8px;padding:4px 9px;border-radius:3px;cursor:pointer;font-family:monospace">✕ CLOSE</button>
+</div>
+<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">WHAT IS THIS?</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">NERVA Market evaluates the stock market using quantum decision mathematics. Market conditions map to a Bloch sphere state vector. Where that vector points determines the decision: COMMIT, HOLD, WAIT, ESCALATE, or TOXIC.</div></div>
+<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">THE FIVE NERVA PARAMETERS</div><div style="font-size:9px;color:#8aafc5;line-height:2.0">
+<span style="color:#00e891">E Urgency</span> — Time pressure. VIX regime + FOMC proximity.<br>
+<span style="color:#00e891">S Strategy</span> — Trend alignment. SPY/QQQ vs moving averages.<br>
+<span style="color:#00e891">R Risk</span> — Systemic risk. VIX level + RSI extremes + put/call ratio.<br>
+<span style="color:#00e891">Support</span> — Market breadth + sector participation.<br>
+<span style="color:#00e891">Stability</span> — Fed stance + execution quality.
+</div></div>
+<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">THE QUANTUM MATH</div>
+<div style="background:#040c18;border:1px solid #162840;border-radius:3px;padding:6px 10px;margin:4px 0 6px;font-size:11px;color:#00e891;">|ψ⟩ = cos(θ/2)|COMMIT⟩ + e^(iφ)sin(θ/2)|AVOID⟩</div>
+<div style="font-size:9px;color:#8aafc5;line-height:1.8">θ (polar) computed from S, Support, Stability, inverse R. φ (azimuthal) set by Urgency. The density matrix ρ = |ψ⟩⟨ψ| yields: S(ρ) von Neumann entropy, |ρ₀₁| coherence, ρ₀₀ commit probability. Entropy is smoothed (max(raw, 0.05×(1−coh))) to prevent false 0% readings.</div></div>
+<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">DECISION STATES</div>
+<div style="display:flex;gap:8px;margin-bottom:4px;padding-left:8px"><span style="color:#00e891;font-weight:bold;min-width:64px">COMMIT</span><span style="color:#4a6a85;font-size:9px">High coherence + commit prob + low entropy. Act with full conviction.</span></div>
+<div style="display:flex;gap:8px;margin-bottom:4px;padding-left:8px"><span style="color:#ffcc44;font-weight:bold;min-width:64px">HOLD</span><span style="color:#4a6a85;font-size:9px">Mixed signal. A+ setups only, half size.</span></div>
+<div style="display:flex;gap:8px;margin-bottom:4px;padding-left:8px"><span style="color:#4a6a85;font-weight:bold;min-width:64px">WAIT</span><span style="color:#4a6a85;font-size:9px">High entropy. No reliable signal. Stand aside.</span></div>
+<div style="display:flex;gap:8px;margin-bottom:4px;padding-left:8px"><span style="color:#ff7733;font-weight:bold;min-width:64px">ESCALATE</span><span style="color:#4a6a85;font-size:9px">State near |AVOID⟩. Hedge or reduce exposure.</span></div>
+<div style="display:flex;gap:8px;margin-bottom:4px;padding-left:8px"><span style="color:#ff3d5a;font-weight:bold;min-width:64px">TOXIC</span><span style="color:#4a6a85;font-size:9px">Max entropy, zero coherence. No action whatsoever.</span></div>
+</div>
+<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">LONG vs SHORT BIAS</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">NERVA measures signal quality, not direction. LONG/SHORT derives from price vs 50d SMA. COMMIT+LONG = highest confidence entry. COMMIT+SHORT = signal clean but trend negative — defensive only.</div></div>
+<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">THE BLOCH SPHERE</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">The green dot IS the decision state — not a metaphor. Top = |COMMIT⟩, Bottom = |AVOID⟩. The three numbers below (S(ρ), |ρ₀₁|, ρ₀₀) are direct density matrix readouts quantifying exactly what the sphere shows visually.</div></div>
+<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">OPPORTUNITY SURFACE</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">Scans 25 names transitioning from WAIT toward COMMIT — rising coherence, dropping entropy. Early signals before price confirmation. Ranked: coherence×0.4 + commitProb×0.35 + (1−entropy)×0.25.</div></div>
+<div style="padding:8px 10px;background:#4a9eff08;border:1px solid #4a9eff12;border-radius:4px;font-size:8px;color:#4a6a85;line-height:1.7">
+<span style="color:#4a9eff">DATA</span> — Live deployment pulls Yahoo Finance via /api/market.js Vercel proxy. Simulation mode activates when proxy unavailable. NERVA is a decision integrity framework — not financial advice.<br>
+<span style="color:#253d55">STARPOINT ENTERPRISES LLC — AMDG</span>
+</div>
+</div>`;
+}
+
 
 // ── TICKER ──
 function startTicker(){
@@ -479,7 +509,7 @@ ${fmt?`<span style="font-size:8px;color:${C.txt}">${fmt}</span>`:''}
 window.toggleExp=function(sym){S.exp=S.exp===sym?null:sym;renderAll();}
 window.setTab=function(t){S.tab=t;S.exp=null;renderAll();}
 window.setMode=function(m){S.mode=m;doRefresh();}
-window.showGuide=function(){const g=document.getElementById('guide');if(g){g.style.display='flex';}}
+window.showGuide=function(){buildGuide();const g=document.getElementById('guide');if(g){g.style.display='flex';}}
 window.hideGuide=function(){const g=document.getElementById('guide');if(g){g.style.display='none';}}
 
 window.doRefresh=async function(){
