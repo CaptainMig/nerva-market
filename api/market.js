@@ -1,13 +1,13 @@
 // ═══════════════════════════════════════════════════════════════
 // NERVA MARKET — Vercel Serverless Proxy
-// /api/market.js — v4.8: Query Error Safety & Symbol Cleaning
+// /api/market.js — v4.9: The "Symbol" Singular Fix
 // ═══════════════════════════════════════════════════════════════
 
 const CACHE_SECONDS = 60;
 const FMP_KEY = process.env.FMP_KEY;
 const FMP_STABLE = 'https://financialmodelingprep.com/stable';
 
-// Removed carets (^) which often trigger "Query Error" on Stable endpoints
+// Clean list for Stable API compatibility
 const SECTOR_SYMS = ['XLK','XLF','XLE','XLV','XLI','XLY','XLP','XLU','XLB','XLRE','XLC'];
 const PORT_SYMS = ['VGT', 'GDX', 'QBTS', 'VYM'];
 const UNIVERSE_SYMS = ['NVDA','AAPL','MSFT','GOOGL','AMZN','META','TSLA','AMD','AVGO','LLY','JPM','V','UNH','XOM','COST','IONQ','RGTI','PLTR','COIN','SNOW','PANW','CRWD','NET','SQ','SHOP'];
@@ -17,9 +17,11 @@ export default async function handler(req, res) {
   if (!FMP_KEY) return res.status(500).json({ error: "FMP_KEY missing in Vercel" });
 
   try {
-    const url = `${FMP_STABLE}/quote?symbols=${ALL_SYMS.join(',')}&apikey=${FMP_KEY}`;
+    // FIX: Changed 'symbols=' to 'symbol=' per FMP Stable requirements
+    const url = `${FMP_STABLE}/quote?symbol=${ALL_SYMS.join(',')}&apikey=${FMP_KEY}`;
+    
     const resp = await fetch(url);
-    const text = await resp.text(); // Read as text first to avoid "Unexpected token Q"
+    const text = await resp.text(); 
 
     let quotes;
     try {
@@ -35,15 +37,22 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "FMP Error", message: quotes });
     }
 
+    // Map results to a dictionary for easy lookup
     const qMap = Object.fromEntries(quotes.map(q => [q.symbol, q]));
+    
     const sectors = {};
-    SECTOR_SYMS.forEach(s => { sectors[s] = qMap[s]?.changesPercentage || 0; });
+    SECTOR_SYMS.forEach(s => { 
+        sectors[s] = qMap[s]?.changesPercentage || 0; 
+    });
 
     const data = {
       timestamp: new Date().toISOString(),
-      source: "fmp_stable_v4.8",
+      source: "fmp_stable_v4.9",
       symbols_fetched: quotes.length,
-      spy: { price: qMap['SPY']?.price || 0, changePct: qMap['SPY']?.changesPercentage || 0 },
+      spy: { 
+        price: qMap['SPY']?.price || 0, 
+        changePct: qMap['SPY']?.changesPercentage || 0 
+      },
       vix: { level: qMap['VIX']?.price || 16 },
       sectors,
       portfolio: PORT_SYMS.map(s => ({
