@@ -48,10 +48,23 @@ function parseChart(data) {
     if (!r) return null;
     const meta = r.meta || {};
     const closes = r.indicators?.quote?.[0]?.close?.filter(c => c != null) || [];
+
+    // Price: prefer meta field, fall back to last close
     const price = meta.regularMarketPrice || closes[closes.length-1] || 0;
-    const prev  = meta.chartPreviousClose || closes[closes.length-2] || price;
-    const change = price - prev;
-    const changePct = prev ? (change/prev)*100 : 0;
+
+    // changePct: try meta direct fields first (most reliable for sectors)
+    let changePct = 0;
+    if (meta.regularMarketChangePercent != null && meta.regularMarketChangePercent !== 0) {
+      changePct = meta.regularMarketChangePercent;
+    } else if (meta.chartPreviousClose && meta.chartPreviousClose !== price) {
+      changePct = ((price - meta.chartPreviousClose) / meta.chartPreviousClose) * 100;
+    } else if (closes.length >= 2) {
+      // Last two closes from the chart data
+      const prev = closes[closes.length-2];
+      if (prev && prev !== price) changePct = ((price - prev) / prev) * 100;
+    }
+
+    const change = meta.regularMarketChange || (price * changePct / 100);
     const sma = (n) => closes.length >= n ? closes.slice(-n).reduce((a,b)=>a+b,0)/n : null;
     return { price, change, changePct, volume: meta.regularMarketVolume||0, sma20:sma(20), sma50:sma(50), sma200:sma(200), closes };
   } catch { return null; }
