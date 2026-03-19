@@ -55,7 +55,14 @@ export default async function handler(req, res) {
     const quotes = {};
     if (quoteResp.ok) {
       const quoteData = await quoteResp.json();
-      (Array.isArray(quoteData) ? quoteData : []).forEach(q => {
+
+      // Debug: log what FMP actually returned
+      console.log('FMP quote status:', quoteResp.status);
+      console.log('FMP quote type:', typeof quoteData, Array.isArray(quoteData) ? 'array len='+quoteData.length : JSON.stringify(quoteData).slice(0,200));
+
+      // FMP returns array of quotes OR error object
+      const quoteArray = Array.isArray(quoteData) ? quoteData : [];
+      quoteArray.forEach(q => {
         if (q?.symbol) {
           quotes[q.symbol] = {
             price:     q.price             || 0,
@@ -65,6 +72,18 @@ export default async function handler(req, res) {
           };
         }
       });
+
+      // If empty, expose the raw response so we can debug
+      if (quoteArray.length === 0) {
+        return res.status(200).json({
+          error: 'FMP returned no quotes',
+          debug: typeof quoteData === 'object' ? quoteData : String(quoteData).slice(0,500),
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } else {
+      const errText = await quoteResp.text();
+      throw new Error(`FMP quote failed: ${quoteResp.status} — ${errText.slice(0,200)}`);
     }
 
     // Parse history for MAs + RSI
