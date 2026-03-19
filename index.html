@@ -94,7 +94,32 @@ function genStock(def,i,tick){
   const Support=Math.min(1,Math.max(0,above/3*.6+(vol>2e6?.3:.1)+.1));
   const Stability=Math.min(1,Math.max(0,.5+(price>sma200?.2:-.2)+w*.1));
   const nerva=NERVA.classify({E,S,R,Support,Stability});
-  return{...def,price,chgPct,vol,sma20,sma50,sma200,rsi,above,nerva,bias:price>sma50?'LONG':'SHORT'};
+  // Apply noise filter before returning
+  const nervaFiltered = applyNoiseFilter(nerva, price, chgPct, rsi);
+  return{...def,price,chgPct,vol,sma20,sma50,sma200,rsi,above,nerva:nervaFiltered,bias:price>sma50?'LONG':'SHORT'};
+}
+
+// ── NOISE FILTER ──
+// Gates that must all pass before COMMIT is allowed
+// Prevents false signals on volatile/speculative names
+function applyNoiseFilter(nerva, price, chgPct, rsi) {
+  const reasons = [];
+  if (price < 8)                    reasons.push('Low price (<$8)');
+  if (Math.abs(chgPct) > 5)         reasons.push('High volatility (>5% move)');
+  if (rsi > 75)                     reasons.push('RSI overbought (>75)');
+  if (rsi < 25)                     reasons.push('RSI oversold (<25)');
+
+  if (reasons.length > 0 && nerva.decision === 'COMMIT') {
+    return {
+      ...nerva,
+      decision: 'HOLD',
+      zone: 'CAUTION',
+      color: '#ffcc44',
+      filtered: true,
+      filterReasons: reasons,
+    };
+  }
+  return { ...nerva, filtered: false, filterReasons: [] };
 }
 
 function genMarket(tick){
@@ -249,8 +274,11 @@ ${[['S(ρ)',mktR.entropy,mktR.entropy>.6?C.red:mktR.entropy<.3?C.grn:C.yel],['|�
     const sc=s.nerva.color;
     const isExp=exp===s.sym;
     const detailHTML=isExp?`<div style="padding:9px 11px;background:${C.panel};border-top:1px solid ${C.border}20;animation:fadeIn 0.2s ease">
-<div style="padding:6px 9px;border-radius:3px;margin-bottom:8px;background:${sc}08;border:1px solid ${sc}20;font-size:8px;color:${C.txt};line-height:1.8">
-${{COMMIT:s.bias==='LONG'?`State → |COMMIT⟩. Coherence ${Math.round(s.nerva.coherence*100)}%. Price above 50d. Signal integrity high — supports entry or adding.`:`State → |COMMIT⟩. Coherence ${Math.round(s.nerva.coherence*100)}%. Price below 50d. Signal clean but trend negative — defensive only.`,HOLD:`Mixed coherence ${Math.round(s.nerva.coherence*100)}%. Entropy ${Math.round(s.nerva.entropy*100)}%. Hold existing — do not add. Watch for coherence recovery above 40%.`,WAIT:`High entropy (${Math.round(s.nerva.entropy*100)}%). State decoherent. No reliable signal. Preserve capital.`,ESCALATE:`Inverse alignment. State → |AVOID⟩. Coherence ${Math.round(s.nerva.coherence*100)}%. Consider hedging.`,TOXIC:`TOXIC — max entropy, min coherence. Stand aside.`}[s.nerva.decision]||''}
+<div style="padding:6px 9px;border-radius:3px;margin-bottom:8px;background:${s.nerva.filtered?'#ffcc4408':sc+'08'};border:1px solid ${s.nerva.filtered?'#ffcc4430':sc+'20'};font-size:8px;color:${C.txt};line-height:1.8">
+${s.nerva.filtered
+  ? `<span style="color:#ffcc44;font-weight:bold">⚠ NOISE FILTER ACTIVE</span> — Signal downgraded from COMMIT to HOLD.<br>Reason: <span style="color:#ffcc44">${s.nerva.filterReasons?.join(' · ')||'volatility flag'}</span><br>NERVA suppressed this signal to protect against false positives. Do not act on COMMIT — review conditions manually.`
+  : ${{COMMIT:s.bias==='LONG'?`State → |COMMIT⟩. Coherence ${Math.round(s.nerva.coherence*100)}%. Price above 50d. Signal integrity high — supports entry or adding.`:`State → |COMMIT⟩. Coherence ${Math.round(s.nerva.coherence*100)}%. Price below 50d. Signal clean but trend negative — defensive only.`,HOLD:`Mixed coherence ${Math.round(s.nerva.coherence*100)}%. Entropy ${Math.round(s.nerva.entropy*100)}%. Hold existing — do not add. Watch for coherence recovery above 40%.`,WAIT:`High entropy (${Math.round(s.nerva.entropy*100)}%). State decoherent. No reliable signal. Preserve capital.`,ESCALATE:`Inverse alignment. State → |AVOID⟩. Coherence ${Math.round(s.nerva.coherence*100)}%. Consider hedging.`,TOXIC:`TOXIC — max entropy, min coherence. Stand aside.`}[s.nerva.decision]||''}
+}
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
 <div>
@@ -274,9 +302,10 @@ ${miniBlochSVG(s.nerva.bloch,50,sc)}
 <span style="text-align:right;color:${C.bright}">$${fp(s.price)}</span>
 <span style="text-align:right;color:${s.chgPct>=0?C.grn:C.red}">${s.chgPct>=0?'+':''}${s.chgPct.toFixed(2)}%</span>
 <span style="text-align:right;color:${s.rsi>70?C.red:s.rsi<30?C.grn:C.txt}">${s.rsi.toFixed(0)}</span>
-<div style="display:flex;gap:3px;justify-content:flex-end;align-items:center">
+<div style="display:flex;gap:3px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
 <span style="color:${sc};font-weight:bold">${s.nerva.decision}</span>
 <span style="font-size:6.5px;color:${s.bias==='LONG'?C.grn:C.red}">${s.bias}</span>
+${s.nerva.filtered?`<span style="font-size:6px;padding:1px 3px;border-radius:2px;background:#ffcc4420;color:#ffcc44;border:1px solid #ffcc4440">⚠</span>`:''}
 </div>
 <span style="text-align:right;color:${sc};font-weight:bold">${s.nerva.score}</span>
 </div>${detailHTML}</div>`;}).join('');
