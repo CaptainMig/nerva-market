@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>NERVA MARKET v6.2 — Quantum Decision Intelligence</title>
+<title>NERVA MARKET v6.3 — Quantum Decision Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -34,13 +34,13 @@ body{background:#040c18;font-family:'JetBrains Mono','Courier New',monospace;col
 <body>
 <div id="guide" style="display:none;position:fixed;inset:0;background:rgba(2,8,18,0.95);z-index:200;align-items:center;justify-content:center;padding:16px;"></div>
 <div id="root"><div style="height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:#040c18;">
-  <div style="color:#4a9eff;font-family:monospace;font-size:13px;letter-spacing:2px;animation:pulse 1.5s infinite">◉ NERVA MARKET v6.2</div>
+  <div style="color:#4a9eff;font-family:monospace;font-size:13px;letter-spacing:2px;animation:pulse 1.5s infinite">◉ NERVA MARKET v6.3</div>
   <div style="color:#253d55;font-family:monospace;font-size:9px;letter-spacing:2px;">INITIALIZING QUANTUM ENGINE...</div>
 </div></div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// NERVA MARKET v6.2 — Pure Vanilla JS — No Babel/JSX
+// NERVA MARKET v6.3 — Pure Vanilla JS — No Babel/JSX
 // Starpoint Enterprises LLC — AMDG
 // ═══════════════════════════════════════════════════════════════
 
@@ -151,19 +151,24 @@ async function fetchLiveData(){
     const sp=d.sectors||{};
     const sorted=Object.entries(sp).sort((a,b)=>b[1]-a[1]);
     const spread=sorted.length>=6?sorted.slice(0,3).reduce((s,e)=>s+e[1],0)/3-sorted.slice(-3).reduce((s,e)=>s+e[1],0)/3:0;
-    return{spy:{price:d.spy.price,sma20:d.spy.sma20||d.spy.price*.99,sma50:d.spy.sma50||d.spy.price*.97,sma200:d.spy.sma200||d.spy.price*.95,rsi:d.spy.rsi||55,chgPct:d.spy.changePct||0,chg5d:d.spy.chg5d||0,chg20d:d.spy.chg20d||0},qqq:{price:d.qqq.price,sma50:d.qqq.sma50||d.qqq.price*.98,chgPct:d.qqq.changePct||0,chg5d:d.qqq.chg5d||0,chg20d:d.qqq.chg20d||0},vix:{level:d.vix.level,trend5d:d.vix.changePct||0,chgPct:d.vix.changePct||0},vvix:{level:d.vvix?.level||85},putCall:{ratio:d.putCall?.ratio||.85},breadth:{a20:d.breadth?.above20d||60,a50:d.breadth?.above50d||55,a200:d.breadth?.above200d||55,ad:d.breadth?.advDeclineRatio||1.1,nhNl:d.breadth?.nhNl||1.5},sectors:sp,sorted,spread,macro:{tny:{y:d.macro.tenYear?.yield||4.3,t:d.macro.tenYear?.trend||'neutral'},dxy:{l:d.macro.dxy?.level||104,t:d.macro.dxy?.trend||'neutral'},fed:d.macro.fedStance||'neutral',fomc:d.macro.fomcDays||15,regime:d.macro.regime||''},exec:{breakoutRetention:d.exec?.breakoutRetention||.65,trendReliability:d.exec?.trendReliability||.6,pullbackBid:d.exec?.pullbackBid||.55,followThrough:d.exec?.followThrough||.5},live:true,rawPortfolio:d.portfolio,rawUniverse:d.universe,source:d.source||'api'};
+    return{spy:{price:d.spy.price,sma20:d.spy.sma20||d.spy.price*.99,sma50:d.spy.sma50||d.spy.price*.97,sma200:d.spy.sma200||d.spy.price*.95,rsi:d.spy.rsi||55,chgPct:d.spy.changePct||0,chg5d:d.spy.chg5d||0,chg20d:d.spy.chg20d||0},qqq:{price:d.qqq.price,sma50:d.qqq.sma50||d.qqq.price*.98,chgPct:d.qqq.changePct||0,chg5d:d.qqq.chg5d||0,chg20d:d.qqq.chg20d||0},vix:{level:d.vix.level,trend5d:d.vix.changePct||0,chgPct:d.vix.changePct||0},vvix:{level:d.vvix?.level||85},putCall:{ratio:d.putCall?.ratio||.85},breadth:{a20:d.breadth?.above20d||60,a50:d.breadth?.above50d||55,a200:d.breadth?.above200d||55,ad:d.breadth?.advDeclineRatio||1.1,nhNl:d.breadth?.nhNl||1.5},sectors:sp,sorted,spread,macro:{tny:{y:d.macro.tenYear?.yield||4.3,t:d.macro.tenYear?.trend||'neutral'},dxy:{l:d.macro.dxy?.level||104,t:d.macro.dxy?.trend||'neutral'},fed:d.macro.fedStance||'neutral',fomc:d.macro.fomcDays||15,regime:d.macro.regime||''},exec:{breakoutRetention:d.exec?.breakoutRetention||.65,trendReliability:d.exec?.trendReliability||.6,pullbackBid:d.exec?.pullbackBid||.55,followThrough:d.exec?.followThrough||.5,br:d.exec?.breakoutRetention||.65,rt:d.exec?.trendReliability||.6,pb:d.exec?.pullbackBid||.55,ft:d.exec?.followThrough||.5},live:true,rawPortfolio:d.portfolio,rawUniverse:d.universe,source:d.source||'api'};
   }catch(e){return null;}
 }
 
 function mktParams(d){
-  const vN=Math.max(0,Math.min(1,(d.vix.level-10)/30)),fU=d.macro.fomc<3?.9:d.macro.fomc<7?.6:.3;
+  const vN=Math.max(0,Math.min(1,(safeNum(d.vix.level,16)-10)/30)),fU=d.macro.fomc<3?.9:d.macro.fomc<7?.6:.3;
   const E=vN*.6+fU*.4;
   const S=(d.spy.price>d.spy.sma20?.25:0)+(d.spy.price>d.spy.sma50?.25:0)+(d.spy.price>d.spy.sma200?.3:0)+(d.qqq.price>d.qqq.sma50?.2:0);
-  const rR=d.spy.rsi>70?.7:d.spy.rsi<30?.8:.2,vR=d.vix.level>25?.8:d.vix.level>20?.5:.2;
-  const R=vR*.4+rR*.3+Math.min(1,d.putCall.ratio)*.3;
-  const bA=(d.breadth.a20+d.breadth.a50+d.breadth.a200)/300,sP=Object.values(d.sectors).filter(v=>v>0).length/11;
+  const rsi=safeNum(d.spy.rsi,55);
+  const rR=rsi>70?.7:rsi<30?.8:.2,vR=d.vix.level>25?.8:d.vix.level>20?.5:.2;
+  const R=vR*.4+rR*.3+Math.min(1,safeNum(d.putCall.ratio,.85))*.3;
+  const bA=(safeNum(d.breadth.a20,55)+safeNum(d.breadth.a50,50)+safeNum(d.breadth.a200,50))/300,sP=Object.values(d.sectors).filter(v=>v>0).length/11;
   const Support=bA*.6+sP*.4,mS=d.macro.fed==='dovish'?.8:d.macro.fed==='neutral'?.6:.3;
-  const eA=(d.exec.br+d.exec.rt+d.exec.pb+d.exec.ft)/4;
+  const eBreak=safeNum(d.exec.breakoutRetention,d.exec.br);
+  const eTrend=safeNum(d.exec.trendReliability,d.exec.rt);
+  const ePull=safeNum(d.exec.pullbackBid,d.exec.pb);
+  const eFollow=safeNum(d.exec.followThrough,d.exec.ft);
+  const eA=(eBreak+eTrend+ePull+eFollow)/4;
   return{E,S,R,Support,Stability:mS*.4+eA*.6};
 }
 
@@ -180,22 +185,32 @@ function regimeFromMarket(d){
   return 'Chop / Transition';
 }
 function computeTrust(d,mktR,execS){
-  const base=mktR.score*0.45+execS*0.2+Math.max(0,Math.min(100,d.breadth.ad*45))*0.15+Math.max(0,Math.min(100,(100-d.vix.level*2.2)))*0.1+Math.max(0,Math.min(100,50+d.spread*20))*0.1;
+  const score=safeNum(mktR.score,50);
+  const ad=safeNum(d.breadth.ad,1);
+  const vix=safeNum(d.vix.level,16);
+  const spread=safeNum(d.spread,0);
+  const ex=safeNum(execS,50);
+  const base=score*0.45+ex*0.2+Math.max(0,Math.min(100,ad*45))*0.15+Math.max(0,Math.min(100,(100-vix*2.2)))*0.1+Math.max(0,Math.min(100,50+spread*20))*0.1;
   return Math.max(0,Math.min(100,Math.round(base)));
 }
 function enrichStock(raw,def,i,tick,mkt){
   const s=genStock(def||{sym:raw.sym,name:inferName(raw.sym),bp:Math.max(1,safeNum(raw.price,10)||10)},i,tick);
-  const price=safeNum(raw.price,s.price),chgPct=safeNum(raw.changePct,s.chgPct),rsi=safeNum(raw.rsi,s.rsi||50);
-  const sma50=safeNum(raw.sma50,price*0.97),sma200=safeNum(raw.sma200,price*0.93),sma20=price*(price>=sma50?0.995:1.005);
+  const useOrFallback=(v,f)=> (Number(v)>0 ? Number(v) : f);
+  const price=useOrFallback(raw.price,s.price),chgPct=safeNum(raw.changePct,s.chgPct),rsi=useOrFallback(raw.rsi,s.rsi||50);
+  const sma50=useOrFallback(raw.sma50,price*0.97),sma200=useOrFallback(raw.sma200,price*0.93),sma20=useOrFallback(raw.sma20,price*(price>=sma50?0.995:1.005));
+  const volume=useOrFallback(raw.volume,s.vol||0);
   const above=(price>sma20?1:0)+(price>sma50?1:0)+(price>sma200?1:0);
   const E=Math.min(1,Math.max(0,Math.abs(chgPct)/5+((rsi>70||rsi<30)?0.25:0)+(mkt.vix.level>22?0.12:0)));
   const S=above/3;
   const R=Math.min(1,Math.max(0,Math.abs(chgPct)/8+(rsi>75||rsi<25?0.35:0)+(mkt.vix.level>25?0.2:0.05)));
   const Support=Math.min(1,Math.max(0,0.2+above/3*0.55+(Math.abs(chgPct)<2?0.15:0)+(mkt.spread>0?0.1:0)));
   const Stability=Math.min(1,Math.max(0,0.4+(price>sma200?0.2:-0.15)+(mkt.breadth.ad>1?0.15:0)+(mkt.macro.fomc>7?0.1:0)));
-  const nerva=applyNoiseFilter(NERVA.classify({E,S,R,Support,Stability}),price,chgPct,rsi);
+  const rawNerva=NERVA.classify({E,S,R,Support,Stability});
+  const nerva=applyNoiseFilter(rawNerva,price,chgPct,rsi);
+  const dataWeak = Number(raw.rsi)<=1 || Number(raw.sma50)<=0 || Number(raw.sma200)<=0 || Number(raw.volume)<=0;
   const mtf=((chgPct>0?1:0)+(price>sma50?1:0)+(price>sma200?1:0))/3;
-  return {...s,...raw,name:def?.name||inferName(raw.sym),price,chgPct,rsi,sma20,sma50,sma200,above,nerva,bias:price>sma50?'LONG':'SHORT',mtf};
+  const sizeDown = nerva.coherence < 0.4 || nerva.entropy > 0.5;
+  return {...s,...raw,name:def?.name||inferName(raw.sym),price,chgPct,rsi,sma20,sma50,sma200,volume,above,nerva,bias:price>sma50?'LONG':'SHORT',mtf,dataWeak,sizeDown};
 }
 
 // ── SVG HELPERS ──
@@ -238,7 +253,8 @@ ${label?`<div style="color:${C.mid};font-size:7px;letter-spacing:1.5px;text-alig
 </div>`;}
 
 function barHTML(v,label){
-  const p=Math.round(v*100),c=p>70?C.grn:p>45?C.yel:C.red;
+  const safe=Math.max(0,Math.min(1,safeNum(v,0)));
+  const p=Math.round(safe*100),c=p>70?C.grn:p>45?C.yel:C.red;
   return`<div style="margin-bottom:5px">
 <div style="display:flex;justify-content:space-between;font-size:8px;color:${C.mid};margin-bottom:2px"><span>${label}</span><span style="color:${c}">${p}%</span></div>
 <div style="height:3px;background:${C.bg};border-radius:2px;overflow:hidden"><div style="height:100%;width:${p}%;background:${c};border-radius:2px"></div></div>
@@ -261,7 +277,7 @@ function renderAll(){
 
 function loadingHTML(){
   return`<div style="height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:${C.bg}">
-<div style="color:${C.acc};font-family:${M};font-size:13px;letter-spacing:2px;animation:pulse 1.5s infinite">◉ NERVA MARKET v6.2</div>
+<div style="color:${C.acc};font-family:${M};font-size:13px;letter-spacing:2px;animation:pulse 1.5s infinite">◉ NERVA MARKET v6.3</div>
 <div style="color:${C.dim};font-family:${M};font-size:9px;letter-spacing:2px">INITIALIZING QUANTUM ENGINE...</div>
 </div>`;}
 
@@ -342,14 +358,14 @@ ${decisionText}
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
 <div>
-<div style="font-size:6.5px;color:${C.dim};letter-spacing:1.5px;margin-bottom:5px">MOVING AVERAGES</div>
+<div class="tt" data-tip="MOVING AVERAGES&#10;20d = short trend, 50d = intermediate trend, 200d = primary trend.&#10;ABV = price above that average, BLW = price below it." style="font-size:6.5px;color:${C.dim};letter-spacing:1.5px;margin-bottom:5px">MOVING AVERAGES (?)</div>
 ${[['20d',s.sma20],['50d',s.sma50],['200d',s.sma200]].map(([l,v])=>`<div style="display:flex;justify-content:space-between;font-size:8px;margin-bottom:3px"><span style="color:${C.dim}">${l} SMA</span><div style="display:flex;gap:4px;align-items:center"><span style="color:${C.txt}">$${fp(v)}</span><span style="font-size:6.5px;padding:1px 4px;border-radius:10px;background:${s.price>v?C.grn+'20':C.red+'20'};color:${s.price>v?C.grn:C.red}">${s.price>v?'ABV':'BLW'}</span></div></div>`).join('')}
 <div style="border-top:1px solid ${C.border};padding-top:4px;margin-top:4px">
 <div style="display:flex;justify-content:space-between;font-size:8px;margin-bottom:2px"><span style="color:${C.dim}">RSI (14)</span><span style="color:${s.rsi>70?C.red:s.rsi<30?C.grn:C.txt}">${s.rsi.toFixed(1)}</span></div>
 <div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:${C.dim}">Volume</span><span style="color:${C.txt}">${fv(s.vol)}</span></div>
 </div></div>
 <div>
-<div style="font-size:6.5px;color:${C.dim};letter-spacing:1.5px;margin-bottom:5px">QUANTUM STATE</div>
+<div class="tt" data-tip="QUANTUM STATE&#10;Coherence = signal agreement. Commit Prob = probability of action. Low Entropy = signal cleanliness.&#10;High commit with low coherence means size down or wait." style="font-size:6.5px;color:${C.dim};letter-spacing:1.5px;margin-bottom:5px">QUANTUM STATE (?)</div>
 <div style="display:flex;gap:6px;align-items:flex-start">
 ${miniBlochSVG(s.nerva.bloch,50,sc)}
 <div style="flex:1">${barHTML(s.nerva.coherence,'Coherence')}${barHTML(s.nerva.commitProb,'Commit Prob')}${barHTML(1-s.nerva.entropy,'Low Entropy')}</div>
@@ -365,7 +381,7 @@ ${miniBlochSVG(s.nerva.bloch,50,sc)}
 <div style="display:flex;gap:3px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
 <span style="color:${sc};font-weight:bold">${s.nerva.decision}</span>
 <span style="font-size:6.5px;color:${s.bias==='LONG'?C.grn:C.red}">${s.bias}</span>
-${s.nerva.filtered?`<span style="font-size:6px;padding:1px 3px;border-radius:2px;background:#ffcc4420;color:#ffcc44;border:1px solid #ffcc4440">⚠</span>`:''}
+${s.nerva.filtered?`<span class="tt" data-tip="NOISE FILTER: signal downgraded because volatility / price / RSI crossed the risk gate." style="font-size:6px;padding:1px 3px;border-radius:2px;background:#ffcc4420;color:#ffcc44;border:1px solid #ffcc4440">FLT</span>`:''}${s.dataWeak?`<span class="tt" data-tip="DATA WEAK: one or more indicators are missing or synthetic (RSI / SMA / volume). Confidence is capped." style="font-size:6px;padding:1px 3px;border-radius:2px;background:${C.red}20;color:${C.red};border:1px solid ${C.red}40">DATA</span>`:''}${s.sizeDown?`<span class="tt" data-tip="SIZE DOWN: coherence is low or entropy is elevated. Tactical sizing only." style="font-size:6px;padding:1px 3px;border-radius:2px;background:${C.acc}20;color:${C.acc};border:1px solid ${C.acc}40">SIZE</span>`:''}
 </div>
 <span style="text-align:right;color:${sc};font-weight:bold">${s.nerva.score}</span>
 </div>${detailHTML}</div>`;}).join('');
@@ -413,7 +429,7 @@ ${mkt.macro.fomc<3?`<div style="background:${C.red}12;border-bottom:1px solid ${
 <div style="border-bottom:1px solid ${C.border};padding:5px 12px;display:flex;justify-content:space-between;align-items:center;background:${C.panel};flex-shrink:0">
 <div style="display:flex;align-items:center;gap:8px">
 <span style="color:${C.acc};font-size:12px;font-weight:bold;letter-spacing:3px">◉ NERVA</span>
-<span style="color:${C.dim};font-size:7px;letter-spacing:1.5px">MARKET v6.2</span>
+<span style="color:${C.dim};font-size:7px;letter-spacing:1.5px">MARKET v6.3</span>
 <div style="display:flex;align-items:center;gap:4px;padding:1px 5px;border:1px solid ${C.border};border-radius:10px;background:${C.bg}"><span style="font-size:6.5px;color:${trustColor}">TRUST ${trust}</span></div>
 <div style="display:flex;align-items:center;gap:3px">
 <div style="width:5px;height:5px;border-radius:50%;background:${S.isLive?C.grn:C.yel};animation:pulse 2s infinite"></div>
@@ -424,8 +440,8 @@ ${mkt.macro.fomc<3?`<div style="background:${C.red}12;border-bottom:1px solid ${
 <span id="sec-ago" style="font-size:7.5px;color:${C.dim}">${S.secAgo}s ago</span>
 <button id="refresh-btn" style="background:${C.border};border:none;border-radius:3px;color:${C.acc};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">↻</button>
 <div style="display:flex;border:1px solid ${C.border};border-radius:3px;overflow:hidden">
-<button id="btn-sw" onclick="setMode('swing')" style="background:${S.mode==='swing'?C.accd:'transparent'};border:none;color:${S.mode==='swing'?C.bright:C.dim};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">SWING</button>
-<button id="btn-dy" onclick="setMode('day')"   style="background:${S.mode==='day'?C.accd:'transparent'};border:none;color:${S.mode==='day'?C.bright:C.dim};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">DAY</button>
+<button id="btn-sw" class="tt" data-tip="SWING MODE&#10;Biases toward multi-day trend continuation.&#10;Lower urgency penalty. More tolerant of mild noise.&#10;Best for 2-10 day holds." onclick="setMode('swing')" style="background:${S.mode==='swing'?C.accd:'transparent'};border:none;color:${S.mode==='swing'?C.bright:C.dim};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">SWING</button>
+<button id="btn-dy" class="tt" data-tip="DAY MODE&#10;Raises urgency and risk penalties.&#10;Requires cleaner execution and higher coherence.&#10;Best for same-day entries where noise is dangerous." onclick="setMode('day')"   style="background:${S.mode==='day'?C.accd:'transparent'};border:none;color:${S.mode==='day'?C.bright:C.dim};font-size:7px;padding:3px 7px;cursor:pointer;font-family:${M}">DAY</button>
 </div>
 <button onclick="showGuide()" style="background:none;border:1px solid ${C.acc}40;border-radius:3px;color:${C.acc};font-size:7px;padding:3px 8px;cursor:pointer;font-family:${M}">? GUIDE</button>
 </div>
@@ -444,7 +460,9 @@ ${mkt.macro.fomc<3?`<div style="background:${C.red}12;border-bottom:1px solid ${
 <span style="font-size:6.5px;letter-spacing:1px;padding:2px 5px;border:1px solid ${C.accd}50;border-radius:2px;color:${C.acc};background:${C.accd}20">${S.mode.toUpperCase()}</span>
 </div>
 <div style="margin-top:6px;font-size:8px;color:${C.mid};line-height:1.7">
-<span style="color:${C.dim}">Regime: </span><span style="color:${C.txt}">${regime}</span><br>
+<span class="tt" data-tip="REGIME
+Strong Uptrend = clean trend. Orderly Uptrend = positive but tactical. Stress / Distribution = defensive posture. Chop = wait for cleaner alignment."><span style="color:${C.dim}">Regime: </span><span style="color:${C.txt}">${regime}</span></span><br><span class="tt" data-tip="MODE IMPACT
+${S.mode==='day'?'DAY: urgency +22%, risk +16%, stricter execution and trust thresholds.':'SWING: standard thresholds, more tolerant of mild chop, favors trend continuation.'}" style="color:${C.acc}">MODE IMPACT (?)</span><br>
 <span style="color:${C.dim}">SPY: </span><span style="color:${mkt.spy.chgPct>=0?C.grn:C.red}">${mkt.spy.chgPct>=0?'+':''}${(mkt.spy.chgPct||0).toFixed(2)}%</span>
 <span style="color:${C.dim};margin:0 4px">·</span>
 <span style="color:${C.dim}">VIX: </span><span style="color:${mkt.vix.level<20?C.grn:mkt.vix.level<25?C.yel:C.red}">${mkt.vix.level.toFixed(1)}</span>
@@ -469,16 +487,19 @@ ${catCard('Macro','◫',cats.mc,[{l:'10Y',v:mkt.macro.tny.y.toFixed(2)+'%',d:mkt
 <!-- SECTOR + ANALYSIS -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px">
 <div style="border:1px solid ${C.border};border-radius:4px;padding:8px 10px;background:${C.panel}">
-<div style="font-size:7px;color:${C.mid};letter-spacing:2px;margin-bottom:6px"><span style="color:${C.acc};margin-right:3px">▦</span>SECTOR HEATMAP <span style="float:right;color:${mkt.spread>0?C.grn:C.red}">spread ${mkt.spread.toFixed(2)}%</span></div>
+<div style="font-size:7px;color:${C.mid};letter-spacing:2px;margin-bottom:6px"><span style="color:${C.acc};margin-right:3px">▦</span><span class="tt" data-tip="SECTOR HEATMAP
+Daily sector rotation. Positive spread means leadership is concentrated in stronger groups. Negative spread means broad internal weakness.">SECTOR HEATMAP (?)</span> <span style="float:right;color:${mkt.spread>0?C.grn:C.red}">spread ${mkt.spread.toFixed(2)}%</span></div>
 ${sectorRows}
 </div>
 <div style="display:flex;flex-direction:column;gap:7px">
 <div style="padding:9px 11px;border:1px solid ${dc}18;border-radius:4px;background:${dc}05;flex:1">
-<div style="font-size:7px;color:${dc};letter-spacing:2px;margin-bottom:5px">◉ TERMINAL ANALYSIS</div>
+<div style="font-size:7px;color:${dc};letter-spacing:2px;margin-bottom:5px"><span class="tt" data-tip="TERMINAL ANALYSIS
+Plain-English summary of the current state, regime, trust, coherence, and entropy. Read this before acting.">◉ TERMINAL ANALYSIS (?)</span></div>
 <div style="font-size:8.5px;line-height:1.75;color:${C.txt}">${analysis}</div>
 </div>
 <div style="border:1px solid ${C.border};border-radius:4px;padding:8px 10px;background:${C.panel}">
-<div style="font-size:7px;color:${C.mid};letter-spacing:2px;margin-bottom:5px"><span style="color:${C.acc};margin-right:3px">⚡</span>EXECUTION WINDOW
+<div style="font-size:7px;color:${C.mid};letter-spacing:2px;margin-bottom:5px"><span style="color:${C.acc};margin-right:3px">⚡</span><span class="tt" data-tip="EXECUTION WINDOW
+Breakouts Holding = continuation quality. Gain Retention = trend reliability. Pullback Buying = dip demand. Follow-Through = persistence after entry.">EXECUTION WINDOW (?)</span>
 <span style="float:right;font-size:6px;padding:1px 5px;border:1px solid ${C.dim}40;color:${C.dim};border-radius:2px">SEPARATE SCORE</span>
 </div>
 <div style="font-size:16px;font-weight:bold;color:${execS>=70?C.grn:execS>=50?C.yel:C.red};margin-bottom:5px">${execS}<span style="font-size:8px;color:${C.mid}">/100</span></div>
@@ -501,7 +522,8 @@ ${stockRows}
 
 <!-- DECOMP -->
 <div style="border:1px solid ${C.border};border-radius:4px;padding:8px 10px;background:${C.panel};margin-bottom:9px">
-<div style="font-size:7px;color:${C.mid};letter-spacing:2px;margin-bottom:6px"><span style="color:${C.acc};margin-right:3px">≡</span>SCORE DECOMPOSITION</div>
+<div style="font-size:7px;color:${C.mid};letter-spacing:2px;margin-bottom:6px"><span style="color:${C.acc};margin-right:3px">≡</span><span class="tt" data-tip="SCORE DECOMPOSITION
+How volatility, trend, breadth, momentum, and macro combine into the market quality score. Trust is the post-penalty confidence layer.">SCORE DECOMPOSITION (?)</span></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px">${decompRows}</div>
 <div style="margin-top:7px;padding-top:6px;border-top:1px solid ${C.border};display:flex;justify-content:space-between;align-items:center">
 <span style="font-size:7.5px;color:${C.dim}">WEIGHTED MARKET QUALITY / TRUST</span>
@@ -509,7 +531,7 @@ ${stockRows}
 </div>
 </div>
 
-<div style="text-align:center;padding:5px 0 2px;font-size:6px;color:${C.dim};letter-spacing:2px">NERVA MARKET v6.2 — QUANTUM DECISION INTELLIGENCE — STARPOINT ENTERPRISES LLC — AMDG</div>
+<div style="text-align:center;padding:5px 0 2px;font-size:6px;color:${C.dim};letter-spacing:2px">NERVA MARKET v6.3 — QUANTUM DECISION INTELLIGENCE — STARPOINT ENTERPRISES LLC — AMDG</div>
 </div><!-- end scroll body -->
 </div><!-- end main -->
 </div><!-- end flex row -->
@@ -526,7 +548,7 @@ function buildGuide() {
 <div style="background:#091524;border:1px solid #162840;border-radius:6px;max-width:580px;width:100%;max-height:85vh;overflow-y:auto;padding:16px 18px;scrollbar-width:thin;">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
 <div>
-  <div style="font-size:12px;color:#4a9eff;font-weight:bold;letter-spacing:2px">◉ NERVA MARKET v6.2</div>
+  <div style="font-size:12px;color:#4a9eff;font-weight:bold;letter-spacing:2px">◉ NERVA MARKET v6.3</div>
   <div style="font-size:7px;color:#253d55;letter-spacing:1.5px">QUANTUM DECISION INTELLIGENCE — USER GUIDE</div>
 </div>
 <button onclick="hideGuide()" style="background:#162840;border:none;color:#8aafc5;font-size:8px;padding:4px 9px;border-radius:3px;cursor:pointer;font-family:monospace">✕ CLOSE</button>
@@ -551,7 +573,8 @@ function buildGuide() {
 </div>
 <div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">LONG vs SHORT BIAS</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">NERVA measures signal quality, not direction. LONG/SHORT derives from price vs 50d SMA. COMMIT+LONG = highest confidence entry. COMMIT+SHORT = signal clean but trend negative — defensive only.</div></div>
 <div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">THE BLOCH SPHERE</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">The green dot IS the decision state — not a metaphor. Top = |COMMIT⟩, Bottom = |AVOID⟩. The three numbers below (S(ρ), |ρ₀₁|, ρ₀₀) are direct density matrix readouts quantifying exactly what the sphere shows visually.</div></div>
-<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">OPPORTUNITY SURFACE</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">Scans 25 names transitioning from WAIT toward COMMIT — rising coherence, dropping entropy. Early signals before price confirmation. Ranked: coherence×0.4 + commitProb×0.35 + (1−entropy)×0.25.</div></div>
+<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">OPPORTUNITY SURFACE</div><div style="font-size:9px;color:#8aafc5;line-height:1.8">Scans 25 names transitioning from WAIT toward COMMIT — rising coherence, dropping entropy. Early signals before price confirmation. Ranked: coherence×0.35 + commitProb×0.25 + low entropy×0.15 + multi-timeframe alignment×0.25.</div></div>
+<div style="margin-bottom:12px"><div style="font-size:7.5px;color:#4a9eff;letter-spacing:2px;margin-bottom:4px">MODE + BADGES</div><div style="font-size:9px;color:#8aafc5;line-height:1.8"><span style="color:#4a9eff">SWING</span> = multi-day continuation logic. <span style="color:#4a9eff">DAY</span> = higher urgency/risk penalties, stricter execution. <span style="color:#ffcc44">FILTER</span> = noise filter tripped. <span style="color:#ff3d5a">DATA</span> = missing indicators, confidence capped. <span style="color:#4a9eff">SIZE</span> = tactical sizing only.</div></div>
 <div style="padding:8px 10px;background:#4a9eff08;border:1px solid #4a9eff12;border-radius:4px;font-size:8px;color:#4a6a85;line-height:1.7">
 <span style="color:#4a9eff">DATA</span> — Live deployment pulls Finnhub via /api/market.js Vercel proxy with cache + candle confirmation. Simulation mode activates only when proxy unavailable. NERVA is a decision integrity framework — not financial advice.<br>
 <span style="color:#253d55">STARPOINT ENTERPRISES LLC — AMDG</span>
@@ -609,9 +632,11 @@ window.doRefresh=async function(){
   if(live){d=live;S.isLive=true;}
   else{d=genMarket(S.tick);S.isLive=false;}
   const rawP=mktParams(d);
-  const adj=S.mode==='day'?{...rawP,E:Math.min(1,rawP.E*1.22),R:Math.min(1,rawP.R*1.16)}:rawP;
+  const adj=S.mode==='day'?{...rawP,E:Math.min(1,safeNum(rawP.E,.5)*1.22),R:Math.min(1,safeNum(rawP.R,.5)*1.16),Support:Math.max(0,safeNum(rawP.Support,.5)-0.05),Stability:Math.max(0,safeNum(rawP.Stability,.5)-0.06)}:{...rawP,E:safeNum(rawP.E,.5),R:safeNum(rawP.R,.5),Support:safeNum(rawP.Support,.5),Stability:safeNum(rawP.Stability,.5)};
   const res=NERVA.classify(adj);
-  const ex=Math.round(((d.exec.breakoutRetention||d.exec.br||.5)*.3+(d.exec.trendReliability||d.exec.rt||.5)*.25+(d.exec.pullbackBid||d.exec.pb||.5)*.25+(d.exec.followThrough||d.exec.ft||.5)*.2)*100);
+  ['entropy','coherence','commitProb','score'].forEach(k=>res[k]=safeNum(res[k],k==='score'?50:.5));
+  res.bloch={x:safeNum(res.bloch?.x,0),y:safeNum(res.bloch?.y,0),z:safeNum(res.bloch?.z,0)};
+  const ex=Math.round((safeNum(d.exec.breakoutRetention,d.exec.br||.5)*.3+safeNum(d.exec.trendReliability,d.exec.rt||.5)*.25+safeNum(d.exec.pullbackBid,d.exec.pb||.5)*.25+safeNum(d.exec.followThrough,d.exec.ft||.5)*.2)*100);
   const livePort=(d.rawPortfolio||[]).length ? d.rawPortfolio.map((raw,i)=>enrichStock(raw,PDEFS.find(x=>x.sym===raw.sym),i,S.tick,d)) : PDEFS.map((s,i)=>genStock(s,i,S.tick));
   const liveUni=(d.rawUniverse||[]).length ? d.rawUniverse.map((raw,i)=>enrichStock(raw,UDEFS.find(x=>x.sym===raw.sym)||{sym:raw.sym,name:inferName(raw.sym),bp:Math.max(raw.price||10,10)},i+100,S.tick,d)) : UDEFS.map((s,i)=>genStock(s,i+100,S.tick));
   const rankedUni=liveUni.sort((a,b)=>((b.nerva.coherence*.35+b.nerva.commitProb*.25+(1-b.nerva.entropy)*.15+b.mtf*.25))-((a.nerva.coherence*.35+a.nerva.commitProb*.25+(1-a.nerva.entropy)*.15+a.mtf*.25)));
