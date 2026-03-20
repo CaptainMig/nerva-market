@@ -1,4 +1,4 @@
-// NERVA MARKET v6.2 — Finnhub proxy
+// NERVA MARKET v6.5 — Finnhub proxy
 // Env: FINNHUB_KEY
 
 const CACHE_MS = 55000;
@@ -230,7 +230,7 @@ export default async function handler(req, res) {
 
     const payload = {
       timestamp: new Date().toISOString(),
-      source: 'finnhub_quote_candle_v6_3',
+      source: 'finnhub_quote_candle_v6_5',
       symbolsFetched: Object.keys(qMap).length,
       quoteErrors,
       spy,
