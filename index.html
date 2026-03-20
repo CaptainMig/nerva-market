@@ -448,7 +448,16 @@ ${s.nerva.filtered?`<span class="tt" data-tip="NOISE FILTER: signal downgraded b
 <div style="font-size:6.5px;color:${s.chgPct>=0?C.grn:C.red}">${s.chgPct>=0?'+':''}${s.chgPct.toFixed(2)}%</div>
 ${miniBlochSVG(s.nerva.bloch,40,s.nerva.color)}
 </div>`).join('');
-
+const dcInfo = {
+  driver: [
+    marketQuality >= execution
+      ? 'Market Quality'
+      : 'Execution'
+  ],
+  constraint: [
+    'None'
+  ]
+};
   return`<div style="background:${C.bg};height:100vh;display:flex;flex-direction:column;overflow:hidden">
 
 <!-- TICKER -->
