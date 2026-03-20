@@ -5,6 +5,7 @@ const CACHE_MS = 55000;
 const QUOTE_TIMEOUT_MS = 4500;
 
 const PORT_SYMS = ['VGT', 'GDX', 'QBTS', 'VYM'];
+const CANDLE_SYMS = [...new Set(['SPY','QQQ', ...PORT_SYMS, 'RGTI', 'IONQ', 'PLTR', 'AMD', 'AVGO', 'NVDA'])];
 const SECTOR_SYMS = ['XLK','XLF','XLE','XLV','XLI','XLY','XLP','XLU','XLB','XLRE','XLC'];
 const UNIVERSE_SYMS = ['NVDA','AAPL','MSFT','GOOGL','AMZN','META','TSLA','AMD','AVGO','LLY','JPM','V','UNH','XOM','COST','IONQ','RGTI','PLTR','COIN','SNOW','PANW','CRWD','NET','XYZ','SHOP'];
 const MACRO_SYMS = ['SPY','QQQ','VIX'];
@@ -140,7 +141,7 @@ export default async function handler(req, res) {
 
   try {
     const quoteResults = await Promise.all(ALL_SYMS.map((sym) => fetchQuote(sym, key)));
-    const candleResults = await Promise.all(['SPY', 'QQQ'].map((sym) => fetchCandleMetrics(sym, key)));
+    const candleResults = await Promise.all(CANDLE_SYMS.map((sym) => fetchCandleMetrics(sym, key)));
 
     const qMap = Object.fromEntries(quoteResults.filter((x) => x.ok).map((x) => [x.sym, x]));
     const cMap = Object.fromEntries(candleResults.filter((x) => x.ok).map((x) => [x.sym, x]));
@@ -205,25 +206,31 @@ export default async function handler(req, res) {
       sym,
       price: num(qMap[sym]?.price, 0),
       changePct: num(qMap[sym]?.changePct, 0),
-      volume: 0,
-      sma50: 0,
-      sma200: 0,
-      rsi: 0,
+      volume: 1,
+      sma20: num(cMap[sym]?.sma20, 0),
+      sma50: num(cMap[sym]?.sma50, 0),
+      sma200: num(cMap[sym]?.sma200, 0),
+      rsi: num(cMap[sym]?.rsi, 0),
+      chg5d: num(cMap[sym]?.chg5d, 0),
+      chg20d: num(cMap[sym]?.chg20d, 0),
     }));
 
     const universe = UNIVERSE_SYMS.map((sym) => ({
       sym,
       price: num(qMap[sym]?.price, 0),
       changePct: num(qMap[sym]?.changePct, 0),
-      volume: 0,
-      sma50: 0,
-      sma200: 0,
-      rsi: 0,
+      volume: cMap[sym] ? 1 : 0,
+      sma20: num(cMap[sym]?.sma20, 0),
+      sma50: num(cMap[sym]?.sma50, 0),
+      sma200: num(cMap[sym]?.sma200, 0),
+      rsi: num(cMap[sym]?.rsi, 0),
+      chg5d: num(cMap[sym]?.chg5d, 0),
+      chg20d: num(cMap[sym]?.chg20d, 0),
     }));
 
     const payload = {
       timestamp: new Date().toISOString(),
-      source: 'finnhub_quote_candle_v6',
+      source: 'finnhub_quote_candle_v6_3',
       symbolsFetched: Object.keys(qMap).length,
       quoteErrors,
       spy,
