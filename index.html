@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>NERVA MARKET v6.3 — Quantum Decision Intelligence</title>
+<title>NERVA MARKET v6.4 — Quantum Decision Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -18,31 +18,47 @@ body{background:#040c18;font-family:'JetBrains Mono','Courier New',monospace;col
 .fade{animation:fadeIn 0.25s ease;}
 .hover-row{transition:background 0.15s;cursor:pointer;}
 .hover-row:hover{background:#091524 !important;}
-.tt{position:relative;cursor:help;}
-.tt::after{
-  content:attr(data-tip);
-  position:absolute;bottom:110%;left:50%;transform:translateX(-50%);
-  background:#0c1e32;color:#a0c4d8;font-size:9px;padding:6px 9px;
-  border-radius:4px;border:1px solid #1e3548;white-space:pre-wrap;
-  width:200px;text-align:left;line-height:1.6;
-  opacity:0;pointer-events:none;transition:opacity 0.15s;z-index:999;
-  font-family:'JetBrains Mono','Courier New',monospace;
-}
-.tt:hover::after{opacity:1;}
+.tt{cursor:help;}
+#tt-overlay{position:fixed;left:0;top:0;max-width:260px;background:#0c1e32;color:#a0c4d8;font-size:9px;padding:7px 10px;border-radius:4px;border:1px solid #1e3548;white-space:pre-wrap;text-align:left;line-height:1.6;pointer-events:none;opacity:0;transform:translate(12px,12px);transition:opacity 0.12s;z-index:99999;font-family:'JetBrains Mono','Courier New',monospace;box-shadow:0 8px 30px rgba(0,0,0,.35);}
+#tt-overlay.show{opacity:1;}
 </style>
 </head>
 <body>
 <div id="guide" style="display:none;position:fixed;inset:0;background:rgba(2,8,18,0.95);z-index:200;align-items:center;justify-content:center;padding:16px;"></div>
 <div id="root"><div style="height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:#040c18;">
-  <div style="color:#4a9eff;font-family:monospace;font-size:13px;letter-spacing:2px;animation:pulse 1.5s infinite">◉ NERVA MARKET v6.3</div>
+  <div style="color:#4a9eff;font-family:monospace;font-size:13px;letter-spacing:2px;animation:pulse 1.5s infinite">◉ NERVA MARKET v6.4</div>
   <div style="color:#253d55;font-family:monospace;font-size:9px;letter-spacing:2px;">INITIALIZING QUANTUM ENGINE...</div>
 </div></div>
+<div id="tt-overlay"></div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// NERVA MARKET v6.3 — Pure Vanilla JS — No Babel/JSX
+// NERVA MARKET v6.4 — Pure Vanilla JS — No Babel/JSX
 // Starpoint Enterprises LLC — AMDG
 // ═══════════════════════════════════════════════════════════════
+
+const TT=document.getElementById('tt-overlay');
+let ttNode=null;
+function showTT(node,e){
+  const tip=node.getAttribute('data-tip');
+  if(!tip) return;
+  ttNode=node; TT.textContent=tip; TT.classList.add('show'); moveTT(e);
+}
+function moveTT(e){
+  if(!ttNode) return;
+  const pad=14; const vw=window.innerWidth; const vh=window.innerHeight;
+  const r=TT.getBoundingClientRect();
+  let x=e.clientX+pad, y=e.clientY+pad;
+  if(x+r.width+12>vw) x=e.clientX-r.width-pad;
+  if(y+r.height+12>vh) y=e.clientY-r.height-pad;
+  if(x<8) x=8; if(y<8) y=8;
+  TT.style.transform=`translate(${x}px,${y}px)`;
+}
+function hideTT(){ ttNode=null; TT.classList.remove('show'); }
+document.addEventListener('mouseover',e=>{ const n=e.target.closest('.tt'); if(n) showTT(n,e); });
+document.addEventListener('mousemove',e=>{ if(ttNode) moveTT(e); });
+document.addEventListener('mouseout',e=>{ if(!ttNode) return; const to=e.relatedTarget; if(to && ttNode.contains && ttNode.contains(to)) return; const still=e.target.closest && e.target.closest('.tt'); if(still===ttNode) hideTT(); });
+document.addEventListener('scroll',hideTT,true);
 
 const C={
   bg:'#040c18',panel:'#091524',border:'#1e3548',dim:'#4a6a85',
@@ -50,6 +66,15 @@ const C={
   grn:'#00e891',yel:'#ffcc44',red:'#ff3d5a',orn:'#ff7733'
 };
 const M="'JetBrains Mono','Courier New',monospace";
+const CAT_TIPS={
+  'Volatility':'VOLATILITY\nStress / fear inputs.\nLow VIX + controlled put/call = calmer tape.\nHigh volatility lowers quality and pushes NERVA defensive.',
+  'Trend':'TREND\nSPY vs 20d / 50d / 200d moving averages.\nAbove all three = primary trend support.\nBelow them = trend damage and lower commit quality.',
+  'Breadth':'BREADTH\nHow many stocks are participating under the surface.\nHigher % above moving averages and stronger A/D means healthier internals.\nWeak breadth means indexes can look fine while internals decay.',
+  'Momentum':'MOMENTUM\nMeasures leadership and internal thrust.\nMore positive sectors, wider spread, and stronger NH/NL improve follow-through odds.\nWeak momentum means rallies may stall.',
+  'Macro':'MACRO\nRates, dollar, and Fed backdrop.\nFalling yields / stable dollar are usually friendlier for risk.\nFOMC proximity increases uncertainty and can reduce trust.',
+  'Market Quality':'MARKET QUALITY SCORE\nWeighted composite of Volatility, Trend, Breadth, Momentum, and Macro.\n80-100: strong conditions. 60-79: tactical. Below 60: defensive.',
+  'Execution':'EXECUTION WINDOW\nSeparate from market quality.\nShows whether breakouts hold, gains stick, pullbacks get bought, and follow-through survives.\nWeak execution means trim size even in a decent regime.'
+};
 
 // ── NERVA QUANTUM ENGINE ──
 const NERVA={
@@ -277,7 +302,7 @@ function renderAll(){
 
 function loadingHTML(){
   return`<div style="height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:${C.bg}">
-<div style="color:${C.acc};font-family:${M};font-size:13px;letter-spacing:2px;animation:pulse 1.5s infinite">◉ NERVA MARKET v6.3</div>
+<div style="color:${C.acc};font-family:${M};font-size:13px;letter-spacing:2px;animation:pulse 1.5s infinite">◉ NERVA MARKET v6.4</div>
 <div style="color:${C.dim};font-family:${M};font-size:9px;letter-spacing:2px">INITIALIZING QUANTUM ENGINE...</div>
 </div>`;}
 
@@ -313,7 +338,7 @@ function appHTML(){
     return`<div style="border:1px solid ${C.border};border-radius:4px;padding:7px 9px;background:${C.panel};position:relative;overflow:hidden">
 <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${c};opacity:.5"></div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-<div style="font-size:7.5px;color:${C.mid}"><span style="color:${C.dim};margin-right:2px">${icon}</span>${title}</div>
+<div class="tt" data-tip="${CAT_TIPS[title]||title}" style="font-size:7.5px;color:${C.mid}"><span style="color:${C.dim};margin-right:2px">${icon}</span>${title} (?)</div>
 <div style="font-size:13px;color:${c};font-weight:bold">${score}</div>
 </div>
 ${items.map(({l,v,c:ic,d})=>`<div style="display:flex;justify-content:space-between;font-size:8px;margin-bottom:2px"><span style="color:${C.dim}">${l}</span><span style="color:${ic||C.txt}">${v}${d||''}</span></div>`).join('')}
@@ -548,7 +573,7 @@ function buildGuide() {
 <div style="background:#091524;border:1px solid #162840;border-radius:6px;max-width:580px;width:100%;max-height:85vh;overflow-y:auto;padding:16px 18px;scrollbar-width:thin;">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
 <div>
-  <div style="font-size:12px;color:#4a9eff;font-weight:bold;letter-spacing:2px">◉ NERVA MARKET v6.3</div>
+  <div style="font-size:12px;color:#4a9eff;font-weight:bold;letter-spacing:2px">◉ NERVA MARKET v6.4</div>
   <div style="font-size:7px;color:#253d55;letter-spacing:1.5px">QUANTUM DECISION INTELLIGENCE — USER GUIDE</div>
 </div>
 <button onclick="hideGuide()" style="background:#162840;border:none;color:#8aafc5;font-size:8px;padding:4px 9px;border-radius:3px;cursor:pointer;font-family:monospace">✕ CLOSE</button>
