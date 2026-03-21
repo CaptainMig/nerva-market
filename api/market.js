@@ -1,10 +1,10 @@
 // ═══════════════════════════════════════════════════════════════
 // NERVA MARKET — Vercel Serverless Proxy
-// api/market.js — v8.0: CommonJS, bulletproof, no ES modules
-// Finnhub quotes (sequential) + Alpha Vantage history (parallel)
+// api/market.js — v8.1: rate-limit-safe sequential fetching
+// Finnhub quotes (sequential 200ms) + Alpha Vantage history (sequential 800ms)
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_TTL = 90; // seconds
+const CACHE_TTL = 180; // 3 minutes — reduces API calls significantly
 const FINNHUB_KEY = process.env.FINNHUB_KEY || '';
 const AV_KEY = process.env.ALPHAVANTAGE_KEY || '';
 
@@ -14,7 +14,7 @@ const QUOTE_SYMS = [
   'XLK','XLF','XLE','XLV','XLI','XLY','XLP','XLU','XLB','XLRE','XLC',
   'VGT','GDX','QBTS','VYM'
 ];
-const HISTORY_SYMS = ['SPY','QQQ','VGT','GDX','QBTS','VYM'];
+const HISTORY_SYMS = ['VGT','GDX','QBTS','VYM'];
 
 // ── In-memory cache ───────────────────────────────────────────
 var cached = null;
@@ -210,7 +210,7 @@ module.exports = async function handler(req, res) {
       } else {
         quoteErrors.push(sym);
       }
-      if (i < QUOTE_SYMS.length - 1) await sleep(100);
+      if (i < QUOTE_SYMS.length - 1) await sleep(200);
     }
 
     // Also fetch VIX
@@ -221,16 +221,11 @@ module.exports = async function handler(req, res) {
       vixQ = await finnhubQuote('CBOE:VIX');
     }
 
-    // ── Step 2: Parallel history fetches ────────────────────
-    var histPromises = {};
-    for (var h = 0; h < HISTORY_SYMS.length; h++) {
-      histPromises[HISTORY_SYMS[h]] = getHistory(HISTORY_SYMS[h]);
-    }
+    // ── Step 2: Sequential history fetches (avoid AV rate limit) ─
     var histResults = {};
-    var histKeys = Object.keys(histPromises);
-    var histVals = await Promise.all(histKeys.map(function(k) { return histPromises[k]; }));
-    for (var j = 0; j < histKeys.length; j++) {
-      histResults[histKeys[j]] = histVals[j];
+    for (var h = 0; h < HISTORY_SYMS.length; h++) {
+      histResults[HISTORY_SYMS[h]] = await getHistory(HISTORY_SYMS[h]);
+      if (h < HISTORY_SYMS.length - 1) await sleep(800);
     }
 
     // ── Step 3: Build sectors ───────────────────────────────
