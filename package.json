@@ -1,5 +1,6 @@
 {
   "name": "nerva-market",
   "version": "4.0.0",
-  "private": true
+  "private": true,
+  "type": "module"
 }
