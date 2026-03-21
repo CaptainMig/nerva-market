@@ -1,8 +1,9 @@
-// NERVA MARKET v7.2 backend patch
-// Goal: protect trust.
-// - only fetch core symbols
-// - compute real SMA/RSI for the 4 portfolio names + SPY/QQQ
-// - slower cache to avoid rate limits
+// NERVA MARKET v7.3 backend patch
+// Fix: portfolio RSI=0 and DATA badge overfiring
+// - parallel quote + candle fetches (beats Vercel 10s timeout)
+// - validate candle data before SMA/RSI calc
+// - rsi14 filters non-finite values
+// Layout and UX unchanged from v7.2
 
 const CACHE_SECONDS = 180;
 const FINNHUB_KEY = process.env.FINNHUB_KEY;
@@ -20,15 +21,18 @@ function sma(arr, len) {
 
 function rsi14(closes) {
   if (!Array.isArray(closes) || closes.length < 15) return 0;
+  // Filter out any non-finite values before calculating
+  const valid = closes.filter(c => Number.isFinite(c) && c > 0);
+  if (valid.length < 15) return 0;
   let gains = 0, losses = 0;
-  for (let i = closes.length - 14; i < closes.length; i++) {
-    const diff = closes[i] - closes[i-1];
+  for (let i = valid.length - 14; i < valid.length; i++) {
+    const diff = valid[i] - valid[i-1];
     if (diff >= 0) gains += diff;
     else losses += Math.abs(diff);
   }
   if (losses === 0) return 100;
   const rs = gains / losses;
-  return 100 - (100 / (1 + rs));
+  return Math.round((100 - (100 / (1 + rs))) * 10) / 10; // round to 1dp
 }
 
 async function quote(sym) {
@@ -53,24 +57,42 @@ export default async function handler(req, res) {
   }
 
   try {
-    const quotes = {};
     const quoteErrors = [];
 
-    for (const sym of CORE_QUOTES) {
-      try {
-        quotes[sym] = await quote(sym);
-      } catch (e) {
-        quoteErrors.push({ sym, msg: e.message });
+    // Run all quote + candle fetches in parallel — beats Vercel 10s timeout
+    // Sequential sleep(90) per symbol was taking 18×90ms=1620ms sleep alone,
+    // pushing candle fetches past the timeout and zeroing RSI/SMA
+    const CANDLE_SYMS_NEEDED = ['SPY', 'QQQ', ...PORT_SYMS];
+
+    const [quoteSettled, candleSettled] = await Promise.all([
+      Promise.allSettled(CORE_QUOTES.map(sym =>
+        quote(sym).then(data => ({ sym, data }))
+      )),
+      Promise.allSettled(CANDLE_SYMS_NEEDED.map(sym =>
+        candles(sym).then(data => ({ sym, data }))
+      )),
+    ]);
+
+    const quotes = {};
+    for (const result of quoteSettled) {
+      if (result.status === 'fulfilled') {
+        quotes[result.value.sym] = result.value.data;
+      } else {
+        // Extract sym from error message or mark as failed
+        quoteErrors.push({ sym: 'unknown', msg: result.reason?.message || 'failed' });
       }
-      await sleep(90);
     }
 
     const hist = {};
-    for (const sym of ['SPY', 'QQQ', ...PORT_SYMS]) {
-      try {
-        hist[sym] = await candles(sym);
-      } catch (e) {}
-      await sleep(120);
+    for (const result of candleSettled) {
+      if (result.status === 'fulfilled') {
+        const { sym, data } = result.value;
+        // Only store if Finnhub returned valid candle data (s === 'ok')
+        if (data?.s === 'ok' && Array.isArray(data?.c) && data.c.length >= 15) {
+          hist[sym] = data;
+        }
+      }
+      // Silent fail — hist[sym] stays undefined, portfolio shows DATA badge
     }
 
     const sectors = {};
@@ -102,7 +124,7 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', `s-maxage=${CACHE_SECONDS}, stale-while-revalidate`);
     return res.status(200).json({
       timestamp: new Date().toISOString(),
-      source: 'finnhub_core_v72',
+      source: 'finnhub_core_v73',
       dataStatus,
       symbolsFetched,
       quoteErrors,
