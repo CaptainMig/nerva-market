@@ -1,8 +1,8 @@
-// NERVA MARKET v7.5 backend patch
-// Fix: switch candles to Finnhub weekly resolution (free tier)
-// Daily candles = paid; weekly candles = free
-// SMA4w≈SMA20d, SMA10w≈SMA50d, SMA40w≈SMA200d
-// Quotes stay on Finnhub (working). Yahoo also blocked from Vercel IPs.
+// NERVA MARKET v7.6 backend patch
+// Fix: candle history via Yahoo Finance 15 (RapidAPI proxy)
+// RapidAPI proxies requests — no Vercel IP blocking
+// Requires RAPIDAPI_KEY env var in Vercel
+// Quotes stay on Finnhub. Real daily SMA20/50/200 + RSI14.
 // Layout and UX unchanged from v7.2
 
 const CACHE_SECONDS = 180;
@@ -42,20 +42,32 @@ async function quote(sym) {
   return await r.json();
 }
 
-// Weekly candle history via Finnhub — free tier supports weekly resolution
-// Daily resolution requires paid plan; weekly is available and sufficient
-// SMA approximations: SMA4w≈SMA20d, SMA10w≈SMA50d, SMA40w≈SMA200d
+// Daily candle history via Yahoo Finance 15 (RapidAPI proxy)
+// RapidAPI proxies the request — no Vercel IP blocking
+// Returns OHLCV daily data, we use close prices for SMA/RSI
 async function candles(sym) {
-  const now = Math.floor(Date.now() / 1000);
-  const from = now - 60 * 60 * 24 * 365; // 1 year back
-  const url = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(sym)}&resolution=W&from=${from}&to=${now}&token=${FINNHUB_KEY}`;
-  const r = await fetch(url);
+  const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+  if (!RAPIDAPI_KEY) throw new Error('RAPIDAPI_KEY not set');
+  const url = `https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/history?symbol=${encodeURIComponent(sym)}&interval=1d&diffandsplits=false`;
+  const r = await fetch(url, {
+    headers: {
+      'x-rapidapi-host': 'yahoo-finance15.p.rapidapi.com',
+      'x-rapidapi-key': RAPIDAPI_KEY,
+      'Content-Type': 'application/json',
+    }
+  });
   if (!r.ok) throw new Error(`${sym} candle ${r.status}`);
   const data = await r.json();
-  if (data?.s !== 'ok' || !Array.isArray(data?.c) || data.c.length < 10) {
-    throw new Error(`${sym} insufficient weekly history: ${data?.s} ${data?.c?.length || 0} bars`);
-  }
-  return { s: 'ok', c: data.c };
+  // Yahoo Finance 15 returns { body: { "2024-01-02": { close: 185.2, ... }, ... } }
+  const body = data?.body;
+  if (!body || typeof body !== 'object') throw new Error(`${sym} no body in response`);
+  // Extract closes in chronological order
+  const closes = Object.keys(body)
+    .sort()
+    .map(k => Number(body[k]?.close || body[k]?.adjclose || 0))
+    .filter(v => Number.isFinite(v) && v > 0);
+  if (closes.length < 15) throw new Error(`${sym} insufficient history: ${closes.length} bars`);
+  return { s: 'ok', c: closes };
 }
 
 export default async function handler(req, res) {
@@ -115,10 +127,10 @@ export default async function handler(req, res) {
         price: Number(q.c || 0),
         changePct: Number(q.dp || 0),
         volume: Number(q.v || 0),
-        sma20: sma(c, 4),    // 4 weekly bars ≈ 20 trading days
-        sma50: sma(c, 10),   // 10 weekly bars ≈ 50 trading days
-        sma200: sma(c, 40),  // 40 weekly bars ≈ 200 trading days
-        rsi: rsi14(c)        // RSI on weekly closes
+        sma20: sma(c, 20),   // real 20-day SMA
+        sma50: sma(c, 50),   // real 50-day SMA
+        sma200: sma(c, 200), // real 200-day SMA
+        rsi: rsi14(c)
       };
     });
 
@@ -131,22 +143,22 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', `s-maxage=${CACHE_SECONDS}, stale-while-revalidate`);
     return res.status(200).json({
       timestamp: new Date().toISOString(),
-      source: 'finnhub_weekly_candles_v75',
+      source: 'finnhub_quotes_rapidapi_candles_v76',
       dataStatus,
       symbolsFetched,
       quoteErrors,
       spy: {
         price: Number(quotes['SPY']?.c || 0),
         changePct: Number(quotes['SPY']?.dp || 0),
-        sma20: sma(spyCloses, 4),    // 4 weekly bars ≈ 20 trading days
-        sma50: sma(spyCloses, 10),   // 10 weekly bars ≈ 50 trading days
-        sma200: sma(spyCloses, 40),  // 40 weekly bars ≈ 200 trading days
-        rsi: rsi14(spyCloses)        // RSI on weekly closes
+        sma20: sma(spyCloses, 20),   // real 20-day SMA
+        sma50: sma(spyCloses, 50),   // real 50-day SMA
+        sma200: sma(spyCloses, 200), // real 200-day SMA
+        rsi: rsi14(spyCloses)
       },
       qqq: {
         price: Number(quotes['QQQ']?.c || 0),
         changePct: Number(quotes['QQQ']?.dp || 0),
-        sma50: sma(qqqCloses, 10),  // 10 weekly bars ≈ 50 trading days
+        sma50: sma(qqqCloses, 50),  // real 50-day SMA
         rsi: rsi14(qqqCloses)
       },
       vix: {
