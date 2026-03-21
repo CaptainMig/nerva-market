@@ -1,8 +1,8 @@
-// NERVA MARKET v7.3 backend patch
-// Fix: portfolio RSI=0 and DATA badge overfiring
-// - parallel quote + candle fetches (beats Vercel 10s timeout)
-// - validate candle data before SMA/RSI calc
-// - rsi14 filters non-finite values
+// NERVA MARKET v7.4 backend patch
+// Fix: candle history switched from Finnhub (paid tier) to Yahoo Finance v8/chart
+// Finnhub free tier does not provide reliable daily historical data
+// Quotes stay on Finnhub (working fine)
+// Candles for SPY/QQQ/VGT/GDX/QBTS/VYM via Yahoo — no auth, server-side, no CORS
 // Layout and UX unchanged from v7.2
 
 const CACHE_SECONDS = 180;
@@ -42,13 +42,22 @@ async function quote(sym) {
   return await r.json();
 }
 
+// Candle history via Yahoo Finance v8/chart — no auth required from server-side
+// Finnhub free tier does not reliably provide daily historical candles
 async function candles(sym) {
-  const now = Math.floor(Date.now() / 1000);
-  const from = now - 60 * 60 * 24 * 320;
-  const url = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(sym)}&resolution=D&from=${from}&to=${now}&token=${FINNHUB_KEY}`;
-  const r = await fetch(url);
+  const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1y&interval=1d&includePrePost=false`;
+  const r = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'application/json',
+    }
+  });
   if (!r.ok) throw new Error(`${sym} candle ${r.status}`);
-  return await r.json();
+  const data = await r.json();
+  // Transform Yahoo format to match expected {s, c} shape
+  const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close?.filter(v => v != null) || [];
+  if (closes.length < 15) throw new Error(`${sym} insufficient history: ${closes.length} bars`);
+  return { s: 'ok', c: closes };
 }
 
 export default async function handler(req, res) {
@@ -124,7 +133,7 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', `s-maxage=${CACHE_SECONDS}, stale-while-revalidate`);
     return res.status(200).json({
       timestamp: new Date().toISOString(),
-      source: 'finnhub_core_v73',
+      source: 'finnhub_quotes_yahoo_candles_v74',
       dataStatus,
       symbolsFetched,
       quoteErrors,
